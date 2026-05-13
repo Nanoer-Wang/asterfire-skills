@@ -1,0 +1,16 @@
+[
+  {
+    "name": "CSV 文件示例",
+    "description": "使用 sample.csv 运行最小 Kit 模板。",
+    "value": {
+      "input_file": "sample.csv"
+    }
+  },
+  {
+    "name": "文本文件示例",
+    "description": "使用 test_file.txt 运行最小 Kit 模板。",
+    "value": {
+      "input_file": "test_file.txt"
+    }
+  }
+]

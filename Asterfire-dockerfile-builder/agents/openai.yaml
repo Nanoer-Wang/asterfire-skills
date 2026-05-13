@@ -1,0 +1,5 @@
+name: asterfire-dockerfile-builder
+version: 1.0.0
+description: Generate Asterfire Kit Dockerfiles, Docker build/tag/push commands, and image directory layout documentation.
+language: zh-CN
+entry: SKILL.md

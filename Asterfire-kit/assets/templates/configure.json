@@ -1,0 +1,14 @@
+{
+  "name": "example-kit",
+  "display_name": "示例 Kit",
+  "version": "1.0.0",
+  "visible": true,
+  "description": "一个符合 Asterfire 平台规范的最小 Kit 示例。",
+  "type": "kit",
+  "tags": [
+    "python",
+    "tool",
+    "example"
+  ],
+  "cover": "https://img.shields.io/badge/Asterfire-Kit-blue"
+}

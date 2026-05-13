@@ -1,0 +1,31 @@
+# Asterfire Kit Dockerfile template: ProteinMPNN
+FROM registry.cn-hangzhou.aliyuncs.com/sidereus-ai/python:3.12.12-slim
+
+ENV PATH=/app/bin:$PATH
+ENV PYTHONPATH=/app:$PYTHONPATH
+
+WORKDIR /app
+
+COPY requirements.txt /app/requirements.txt
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 python3-pip ca-certificates git \
+    && pip3 install --no-cache-dir -r /app/requirements.txt \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY ProteinMPNN/ProteinMPNN-main /opt/ProteinMPNN
+
+ENV PROTEINMPNN_HOME=/opt/ProteinMPNN
+ENV PYTHONPATH=/opt/ProteinMPNN:/app:$PYTHONPATH
+
+RUN python --version \
+    && which python \
+    && ls -lah /opt/ProteinMPNN \
+    && test -f /opt/ProteinMPNN/protein_mpnn_run.py \
+    && test -d /opt/ProteinMPNN/helper_scripts
+
+WORKDIR /app
+CMD ["bash"]
+
+LABEL Author="Your Name" \
+      Version="1.0.0" \
+      Description="Asterfire Kit image with local ProteinMPNN project"

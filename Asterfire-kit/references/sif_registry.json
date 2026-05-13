@@ -1,0 +1,336 @@
+{
+  "schema_version": "1.0",
+  "description": "Asterfire 平台 Kit SIF 注册表。用于记录每个 SIF 的负责人、用途、环境、默认资源和维护信息。SIF 命名规则固定为 name:version，例如 orca610:1.0.0。",
+  "sifs": [
+    {
+      "sif": "asterfire-base:1.0.0",
+      "owner": "平台维护组",
+      "purpose": "最小 Kit 示例和基础 Python 文件处理",
+      "environment": [
+        "Python 3.12",
+        "adam_community"
+      ],
+      "contains": [
+        "python",
+        "bash",
+        "coreutils"
+      ],
+      "default_resources": {
+        "cpu": 2,
+        "gpu": 0,
+        "network": false
+      },
+      "tags": [
+        "python",
+        "example",
+        "template"
+      ],
+      "updated_at": "2026-05-09",
+      "notes": "模板示例。真实项目中请替换为平台已构建并可用的 SIF。"
+    },
+    {
+      "sif": "abacus:1.0.5",
+      "owner": " ",
+      "purpose": "主要用于 ABACUS 各种 Kit 开发的 SIF，ABACUS依赖环境（OpenMPI等），PyATB, Bader，以及内置的ABACUS赝势轨道库。支持ASE, pymatgen, dpdata, phonopy, phono3py等科学计算用Python库",
+      "environment": [
+        "ABACUS",
+        "ASE",
+        "pymatgen",
+        "dpdata",
+        "phonopy",
+        "phono3py"
+      ],
+      "contains": [
+        "abacus"
+      ],
+      "default_resources": {
+        "cpu": 4,
+        "gpu": 0,
+        "network": false
+      },
+      "tags": [
+        "abacus",
+        "dft",
+        "materials"
+      ],
+      "updated_at": "2026-05-09",
+      "notes": "平台登记的 ABACUS SIF，支持ASE, pymatgen, dpdata, phonopy, phono3py等科学计算用Python库以及依赖OpenMPI的ABACUS。"
+    },
+    {
+      "sif": "MACE:1.0.0",
+      "owner": " ",
+      "purpose": "主要用于 MACE 各种 Kit 开发的 SIF",
+      "environment": [
+        "MACE",
+        "torch",
+        "ASE",
+        "pymatgen",
+        "dpdata",
+        "phonopy",
+        "phono3py"
+      ],
+      "contains": [
+        "mace",
+        "python"
+      ],
+      "default_resources": {
+        "cpu": 4,
+        "gpu": 1,
+        "network": false
+      },
+      "tags": [
+        "mace",
+        "machine-learning-potential",
+        "deepmd",
+        "gpu"
+      ],
+      "updated_at": "2026-05-09",
+      "notes": "MACE SIF。DeePMD-kit 是否存在需要后续确认。"
+    },
+    {
+      "sif": "bioinfo_sjtu:1.0.0",
+      "owner": " ",
+      "purpose": "生物信息相关 Kit 开发的 SIF",
+      "environment": [],
+      "contains": [],
+      "default_resources": {
+        "cpu": 2,
+        "gpu": 0,
+        "network": false
+      },
+      "tags": [
+        "bioinfo",
+        "unknown"
+      ],
+      "updated_at": "2026-05-09",
+      "notes": "暂时不清楚里面有什么，先注册镜像，后续补充环境信息。"
+    },
+    {
+      "sif": "Bioinfo_sju:1.0.0",
+      "owner": " ",
+      "purpose": "生物信息相关 Kit 开发的 SIF",
+      "environment": [],
+      "contains": [],
+      "default_resources": {
+        "cpu": 2,
+        "gpu": 0,
+        "network": false
+      },
+      "tags": [
+        "bioinfo",
+        "unknown"
+      ],
+      "updated_at": "2026-05-09",
+      "notes": "暂时不清楚里面有什么，先注册镜像，后续补充环境信息。注意该 SIF 名称首字母为大写 Bioinfo_sju。"
+    },
+    {
+      "sif": "singlecell:1.0.0",
+      "owner": " ",
+      "purpose": "单细胞分析相关 Kit 开发的 SIF",
+      "environment": [],
+      "contains": [
+        "readData",
+        "qc",
+        "preprocess",
+        "singlecell-cluster",
+        "annotation",
+        "marker-de"
+      ],
+      "default_resources": {
+        "cpu": 4,
+        "gpu": 0,
+        "network": false
+      },
+      "tags": [
+        "singlecell",
+        "bioinfo",
+        "unknown"
+      ],
+      "updated_at": "2026-05-09",
+      "notes": "主要用于单细胞分析。"
+    },
+    {
+      "sif": "orca610:1.0.0",
+      "owner": " ",
+      "purpose": "主要用于 ORCA 相关 Kit 开发的 SIF",
+      "environment": [
+        "ORCA"
+      ],
+      "contains": [
+        "orca"
+      ],
+      "default_resources": {
+        "cpu": 8,
+        "gpu": 0,
+        "network": false
+      },
+      "tags": [
+        "orca",
+        "quantum-chemistry",
+        "qm"
+      ],
+      "updated_at": "2026-05-09",
+      "notes": "里面有 ORCA。"
+    },
+    {
+      "sif": "ambertools:1.0.0",
+      "owner": " ",
+      "purpose": "主要用于 Amber / AmberTools / ORCA 相关 Kit 开发的 SIF",
+      "environment": [
+        "Amber",
+        "AmberTools",
+        "ORCA"
+      ],
+      "contains": [
+        "amber",
+        "ambertools",
+        "orca"
+      ],
+      "default_resources": {
+        "cpu": 8,
+        "gpu": 0,
+        "network": false
+      },
+      "tags": [
+        "amber",
+        "ambertools",
+        "orca",
+        "molecular-dynamics",
+        "quantum-chemistry"
+      ],
+      "updated_at": "2026-05-09",
+      "notes": "里面有 amber、ambertools 以及 orca。"
+    },
+    {
+      "sif": "bindcraft:1.0.0",
+      "owner": " ",
+      "purpose": "主要用于 BindCraft 蛋白质结合物设计",
+      "environment": [
+        "BindCraft",
+        "可能包含 GPU 版 PyTorch"
+      ],
+      "contains": [
+        "bindcraft",
+        "python",
+        "可能包含 torch"
+      ],
+      "default_resources": {
+        "cpu": 4,
+        "gpu": 1,
+        "network": false
+      },
+      "tags": [
+        "bindcraft",
+        "protein-design",
+        "torch",
+        "gpu"
+      ],
+      "updated_at": "2026-05-09",
+      "notes": "主要用于 BindCraft 蛋白质结合物设计，里面大概率有 GPU 版 torch。"
+    },
+    {
+      "sif": "prolif:1.0.0",
+      "owner": " ",
+      "purpose": "主要用于 ProLIF 相关 Kit 开发",
+      "environment": [
+        "ProLIF"
+      ],
+      "contains": [
+        "prolif"
+      ],
+      "default_resources": {
+        "cpu": 2,
+        "gpu": 0,
+        "network": false
+      },
+      "tags": [
+        "prolif",
+        "protein-ligand",
+        "interaction-fingerprint"
+      ],
+      "updated_at": "2026-05-09",
+      "notes": "当时用于开发 prolif 用的，具体环境后续补充。"
+    },
+    {
+      "sif": "gromacs2023_protein_ligand:1.0.0",
+      "owner": " ",
+      "purpose": "主要用于 GROMACS 蛋白-配体分子动力学相关 Kit 开发",
+      "environment": [
+        "GROMACS"
+      ],
+      "contains": [
+        "gromacs",
+        "gmx_mpi"
+      ],
+      "default_resources": {
+        "cpu": 12,
+        "gpu": 1,
+        "network": false
+      },
+      "tags": [
+        "gromacs",
+        "molecular-dynamics",
+        "protein-ligand",
+        "gpu",
+        "gmx_mpi"
+      ],
+      "updated_at": "2026-05-09",
+      "notes": "里面有 GROMACS，调用方式是 gmx_mpi，可以使用 GPU。"
+    },
+    {
+      "sif": "gromacs-dependencies-sobtop:1.0.0",
+      "owner": " ",
+      "purpose": "主要用于 GROMACS 前处理、力场参数生成和 Sobtop / Multiwfn 相关 Kit 开发",
+      "environment": [
+        "Sobtop",
+        "Multiwfn"
+      ],
+      "contains": [
+        "sobtop",
+        "multiwfn"
+      ],
+      "default_resources": {
+        "cpu": 4,
+        "gpu": 0,
+        "network": false
+      },
+      "tags": [
+        "sobtop",
+        "multiwfn",
+        "gromacs-dependencies",
+        "force-field"
+      ],
+      "updated_at": "2026-05-09",
+      "notes": "里面有 sobtop 和 Multiwfn。"
+    },
+    {
+      "sif": "ProteinMPNN:1.0.0",
+      "owner": " ",
+      "purpose": "ProteinMPNN蛋白质序列设计Kit，支持基于骨架结构的蛋白质序列逆向预测、评分、条件/无条件概率计算",
+      "environment": [
+        "Python 3.x",
+        "PyTorch",
+        "mlfold conda环境"
+      ],
+      "contains": [
+        "python",
+        "torch",
+        "numpy",
+        "ProteinMPNN"
+      ],
+      "tags": [
+        "protein-design",
+        "protein-mpnn",
+        "torch",
+        "gpu"
+      ],
+      "default_resources": {
+        "cpu": 4,
+        "gpu": 1,
+        "network": false
+      },
+      "updated_at": "2026-05-12",
+      "notes": ""
+    }
+  ]
+}

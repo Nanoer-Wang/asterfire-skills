@@ -1,0 +1,31 @@
+构建上下文目录示例：
+
+.
+├── Dockerfile
+├── requirements.txt
+├── ProteinMPNN/
+│   └── ProteinMPNN-main/
+│       ├── protein_mpnn_run.py
+│       ├── helper_scripts/
+│       ├── vanilla_model_weights/
+│       ├── soluble_model_weights/
+│       └── ...
+└── ProteinMPNN.py        # Asterfire Kit 主入口，不一定 COPY 进镜像，由平台运行时投递到 /workspace
+
+镜像内结构示例：
+
+/
+├── app/
+│   └── requirements.txt
+├── opt/
+│   └── ProteinMPNN/
+│       ├── protein_mpnn_run.py
+│       ├── helper_scripts/
+│       ├── vanilla_model_weights/
+│       └── soluble_model_weights/
+└── workspace/
+    ├── runner.py
+    ├── input.pdb
+    ├── proteinmpnn_work/
+    ├── proteinmpnn_outputs.zip
+    └── report.md

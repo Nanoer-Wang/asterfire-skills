@@ -1,0 +1,44 @@
+[
+  {
+    "name": "ProteinMPNN Dockerfile Demo",
+    "description": "Generate an Asterfire Kit Dockerfile that copies local ProteinMPNN project into /opt/ProteinMPNN and outputs build/tag/push commands.",
+    "value": {
+      "kit_name": "proteinmpnn",
+      "local_image_name": "proteinmpnn-1",
+      "image_version": "1.0.0",
+      "base_image": "registry.cn-hangzhou.aliyuncs.com/sidereus-ai/python:3.12.12-slim",
+      "dependency_mode": "pip",
+      "requirements_file": "requirements.txt",
+      "project_copy": {
+        "local_path": "ProteinMPNN/ProteinMPNN-main",
+        "image_path": "/opt/ProteinMPNN"
+      },
+      "env": {
+        "PROTEINMPNN_HOME": "/opt/ProteinMPNN"
+      },
+      "registry_example": {
+        "login": "docker login --username=xxxxxxxxxxx crpi-3v2rl4y9u3xihgef.cn-hangzhou.personal.cr.aliyuncs.com",
+        "tag": "docker tag [images id] crpi-3v2rl4y9u3xihgef.cn-hangzhou.personal.cr.aliyuncs.com/mlfold/proteinmpnn-1:[镜像版本]",
+        "push": "docker push crpi-3v2rl4y9u3xihgef.cn-hangzhou.personal.cr.aliyuncs.com/mlfold/proteinmpnn-1:[镜像版本]"
+      }
+    }
+  },
+  {
+    "name": "Minimal Asterfire Kit Dockerfile Demo",
+    "description": "Generate a minimal Dockerfile based on the official Asterfire Kit example, with /app as build-time workdir and /workspace explained as runtime workdir.",
+    "value": {
+      "kit_name": "basic-kit",
+      "local_image_name": "basic-kit",
+      "image_version": "1.0.0",
+      "base_image": "registry.cn-hangzhou.aliyuncs.com/sidereus-ai/python:3.12.12-slim",
+      "dependency_mode": "pip",
+      "requirements_file": "requirements.txt",
+      "copy_files": [
+        {
+          "local_path": "local_file.txt",
+          "image_path": "/app/local_file.txt"
+        }
+      ]
+    }
+  }
+]

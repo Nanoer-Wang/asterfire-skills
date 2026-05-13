@@ -1,0 +1,22 @@
+# Asterfire Kit minimal Dockerfile template
+FROM registry.cn-hangzhou.aliyuncs.com/sidereus-ai/python:3.12.12-slim
+
+ENV PATH=/app/bin:$PATH
+ENV PYTHONPATH=/app:$PYTHONPATH
+
+WORKDIR /app
+
+COPY local_file.txt /app/local_file.txt
+COPY requirements.txt /app/requirements.txt
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 python3-pip ca-certificates \
+    && pip3 install --no-cache-dir -r /app/requirements.txt \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+CMD ["bash"]
+
+LABEL Author="Your Name" \
+      Version="1.0.0" \
+      Description="Asterfire Kit image"

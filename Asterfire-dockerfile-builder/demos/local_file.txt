@@ -1,0 +1,1 @@
+This file is a demo asset copied into /app/local_file.txt.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Asterfire Project to Kit Adapter"
+  short_description: "把普通项目代码适配为 Asterfire 平台 Kit，并强制先确认 runner 配置与 SIF。"
+  default_prompt: "使用该 Skill 分析普通项目代码，并在确认 DISPLAY_NAME、NETWORK、CPU、GPU、SIF 后，将其改造成符合平台规范的 Kit。若用户未提供配置，先询问；若用户授权，则从 SIF 注册表选择合适镜像。"

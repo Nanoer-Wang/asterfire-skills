@@ -1,0 +1,4 @@
+interface:
+  display_name: "Asterfire Kit Development"
+  short_description: "规范 Asterfire Kit 工具开发、审查和打包。"
+  default_prompt: "使用该 Skill 开发、重构、审查或打包 Kit 工具，确保 SIF、input.json 表单知识库、configure.json、@tool_io、return dict、report.md 和 Makefile 全部符合平台规范。"

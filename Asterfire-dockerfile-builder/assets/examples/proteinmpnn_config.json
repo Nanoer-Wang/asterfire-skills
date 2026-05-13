@@ -1,0 +1,29 @@
+{
+  "kit_name": "proteinmpnn",
+  "local_image_name": "proteinmpnn-1",
+  "image_version": "1.0.0",
+  "base_image": "registry.cn-hangzhou.aliyuncs.com/sidereus-ai/python:3.12.12-slim",
+  "author": "Your Name",
+  "description": "Asterfire Kit image with local ProteinMPNN project",
+  "dependency_mode": "pip",
+  "apt_packages": ["python3", "python3-pip", "ca-certificates", "git"],
+  "requirements_file": "requirements.txt",
+  "copies": [
+    {
+      "src": "ProteinMPNN/ProteinMPNN-main",
+      "dst": "/opt/ProteinMPNN"
+    }
+  ],
+  "env": {
+    "PROTEINMPNN_HOME": "/opt/ProteinMPNN",
+    "PYTHONPATH": "/opt/ProteinMPNN:/app:$PYTHONPATH"
+  },
+  "sanity_checks": [
+    "test -f /opt/ProteinMPNN/protein_mpnn_run.py",
+    "test -d /opt/ProteinMPNN/helper_scripts"
+  ],
+  "workdir": "/app",
+  "registry": "crpi-3v2rl4y9u3xihgef.cn-hangzhou.personal.cr.aliyuncs.com",
+  "registry_username": "xxxxxxxxxxx",
+  "namespace_repo": "mlfold/proteinmpnn-1"
+}

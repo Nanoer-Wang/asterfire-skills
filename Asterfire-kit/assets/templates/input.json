@@ -1,0 +1,28 @@
+{
+  "formName": "示例 Kit 参数配置",
+  "description": "上传一个输入文件并运行示例 Kit。字段 name 必须与 Python 中 kwargs['args'] 的 key 完全一致。真实 Kit 开发时应优先从 references/input_form_catalog.json 选择最小模板或字段配方。",
+  "defaultValues": {},
+  "formRules": {
+    "required": [
+      "input_file"
+    ]
+  },
+  "fields": [
+    {
+      "name": "input_file",
+      "label": "输入文件",
+      "type": "file",
+      "description": "上传需要处理的输入文件。",
+      "validation": {
+        "required": true,
+        "accept": [
+          ".txt",
+          ".csv",
+          ".json",
+          ".pdb"
+        ],
+        "message": "请上传当前 Kit 支持的输入文件。"
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+APP_NAME := {{KIT_NAME}}
+VERSION := 1.0.0
+
+.PHONY: build clean
+
+build:
+	adam-cli parse .
+	adam-cli build .
+
+clean:
+	rm -f *.zip
+	rm -f functions.json

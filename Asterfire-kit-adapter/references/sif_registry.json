@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "description": "Asterfire 平台 Kit SIF 注册表。用于记录每个 SIF 的负责人、用途、环境、默认资源和维护信息。",
+  "sifs": [
+    {
+      "sif": "adam-base:1.0.0",
+      "owner": "平台维护组",
+      "purpose": "最小 Kit 示例和基础 Python 文件处理",
+      "environment": [
+        "Python 3.12",
+        "adam_community"
+      ],
+      "contains": [
+        "python",
+        "bash",
+        "coreutils"
+      ],
+      "default_resources": {
+        "cpu": 2,
+        "gpu": 0,
+        "network": false
+      },
+      "tags": [
+        "python",
+        "example",
+        "template"
+      ],
+      "updated_at": "2026-05-09",
+      "notes": "模板示例。真实项目中请替换为平台已构建并可用的 SIF。"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "{{KIT_NAME}}",
+  "display_name": "{{DISPLAY_NAME}}",
+  "version": "1.0.0",
+  "visible": true,
+  "description": "{{中文描述：说明该 Kit 从普通项目适配而来，提供什么能力。}}",
+  "type": "kit",
+  "tags": [
+    "python",
+    "kit",
+    "adapter"
+  ],
+  "cover": "https://img.shields.io/badge/Asterfire-Kit-blue"
+}

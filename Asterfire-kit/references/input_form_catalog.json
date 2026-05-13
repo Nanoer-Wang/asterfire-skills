@@ -1,0 +1,502 @@
+{
+  "schema_version": "1.0",
+  "name": "Asterfire Kit input.json 表单定义知识库",
+  "description": "根据平台 Kit 表单定义整理的机器可读知识库。开发 Kit 时优先从本文件选择字段类型、字段模板和任务模板，生成满足需求的最小 input.json。",
+  "source": "Kit 表单定义.pdf",
+  "form_config": {
+    "required_top_level_keys": [
+      "formName",
+      "description",
+      "formRules",
+      "fields"
+    ],
+    "optional_top_level_keys": [
+      "defaultValues"
+    ],
+    "shape": {
+      "formName": "表单名称，中文，面向用户展示。",
+      "description": "表单描述，中文，说明该 Kit 需要用户填写什么。",
+      "defaultValues": "表单级默认值。只有字段有真实默认值时才写，不要为了完整性添加空噪声字段。",
+      "formRules": {
+        "required": "必填字段 name 列表。必须与 fields[].name 保持一致。",
+        "customRules": "表单级自定义验证规则列表。只有确实需要跨字段验证时才写。"
+      },
+      "fields": "字段配置列表。每个字段 name 都会成为 kwargs['args'] 的 key。"
+    }
+  },
+  "supported_field_types": {
+    "string": {
+      "label": "字符串",
+      "use_for": "短文本输入，例如残基名、任务名、ID、短路径别名、短参数。",
+      "required_keys": ["name", "label", "type"],
+      "optional_keys": ["description", "validation", "conditional", "hidden"],
+      "validation_keys": ["required", "minLength", "maxLength", "pattern", "message"],
+      "minimal_example": {
+        "name": "residue_name",
+        "label": "小分子在 PDB 中的残基名",
+        "type": "string",
+        "description": "填写小分子在 PDB 文件中的残基名。",
+        "validation": {
+          "required": true,
+          "message": "请填写残基名。"
+        }
+      }
+    },
+    "text": {
+      "label": "文本域",
+      "use_for": "长文本输入，例如蛋白序列、SMILES 列表、说明文本、多行参数。",
+      "required_keys": ["name", "label", "type"],
+      "optional_keys": ["description", "validation", "conditional", "hidden"],
+      "validation_keys": ["required", "minLength", "maxLength", "pattern", "message"],
+      "minimal_example": {
+        "name": "sequence",
+        "label": "蛋白序列",
+        "type": "text",
+        "description": "粘贴一条或多条序列。",
+        "validation": {
+          "required": true,
+          "message": "请填写序列。"
+        }
+      }
+    },
+    "number": {
+      "label": "数字",
+      "use_for": "数值参数，例如步数、阈值、pH、温度、时间、cutoff。只有用户确实需要调节时才暴露。",
+      "required_keys": ["name", "label", "type"],
+      "optional_keys": ["description", "validation", "conditional", "hidden"],
+      "validation_keys": ["required", "min", "max", "message"],
+      "minimal_example": {
+        "name": "ph",
+        "label": "pH",
+        "type": "number",
+        "description": "用于加氢或质子化状态判断的 pH。",
+        "validation": {
+          "required": false,
+          "min": 0,
+          "max": 14,
+          "message": "pH 必须在 0-14 之间。"
+        }
+      }
+    },
+    "boolean": {
+      "label": "布尔值",
+      "use_for": "是/否开关，例如严格模式、是否启用高级选项、是否压缩输出。",
+      "required_keys": ["name", "label", "type"],
+      "optional_keys": ["description", "validation", "conditional", "hidden"],
+      "validation_keys": ["required", "message"],
+      "minimal_example": {
+        "name": "strict_mode",
+        "label": "严格模式",
+        "type": "boolean",
+        "description": "启用后会把格式警告视为失败。",
+        "validation": {
+          "required": false
+        }
+      }
+    },
+    "select": {
+      "label": "单选",
+      "use_for": "从少量固定方案中选择一个，例如算法、力场、输出格式。不要用 select 暴露无关标签。",
+      "required_keys": ["name", "label", "type", "options"],
+      "optional_keys": ["description", "validation", "conditional", "hidden"],
+      "validation_keys": ["required", "message"],
+      "minimal_example": {
+        "name": "output_format",
+        "label": "输出格式",
+        "type": "select",
+        "description": "选择结果文件格式。",
+        "options": [
+          {"label": "文本", "value": "txt"},
+          {"label": "JSON", "value": "json"}
+        ],
+        "validation": {
+          "required": false
+        }
+      }
+    },
+    "multiselect": {
+      "label": "多选",
+      "use_for": "从固定方案中选择多个，例如需要生成的分析图、需要执行的检查项。",
+      "required_keys": ["name", "label", "type", "options"],
+      "optional_keys": ["description", "validation", "conditional", "hidden"],
+      "validation_keys": ["required", "min", "max", "message"],
+      "minimal_example": {
+        "name": "checks",
+        "label": "检查项目",
+        "type": "multiselect",
+        "description": "选择需要执行的检查项目。",
+        "options": [
+          {"label": "文件可读性", "value": "readable"},
+          {"label": "基础记录", "value": "records"},
+          {"label": "链信息", "value": "chains"}
+        ],
+        "validation": {
+          "required": false,
+          "min": 1,
+          "max": 3
+        }
+      }
+    },
+    "file": {
+      "label": "文件",
+      "use_for": "上传单个文件，例如 PDB、CIF、MOL2、CSV、JSON、ZIP。文件字段是 Kit 最常见、最小化输入的首选。",
+      "required_keys": ["name", "label", "type"],
+      "optional_keys": ["description", "validation", "conditional", "hidden"],
+      "validation_keys": ["required", "accept", "maxSize", "message"],
+      "minimal_example": {
+        "name": "input_pdb",
+        "label": "PDB 文件",
+        "type": "file",
+        "description": "上传需要验证的 .pdb 文件。",
+        "validation": {
+          "required": true,
+          "accept": [".pdb", "chemical/x-pdb"],
+          "message": "请上传 .pdb 文件。"
+        }
+      }
+    },
+    "date": {
+      "label": "日期",
+      "use_for": "日期选择。只有任务逻辑真正依赖日期时才使用。",
+      "required_keys": ["name", "label", "type"],
+      "optional_keys": ["description", "validation", "conditional", "hidden"],
+      "validation_keys": ["required", "min", "max", "message"],
+      "minimal_example": {
+        "name": "run_date",
+        "label": "运行日期",
+        "type": "date",
+        "description": "选择运行日期。只有任务需要日期时才使用该字段。",
+        "validation": {
+          "required": false
+        }
+      }
+    },
+    "object": {
+      "label": "对象",
+      "use_for": "嵌套表单结构。仅在多个字段确实属于同一逻辑对象时使用。",
+      "required_keys": ["name", "label", "type", "fields"],
+      "optional_keys": ["description", "conditional", "hidden"],
+      "validation_keys": [],
+      "minimal_example": {
+        "name": "advanced_options",
+        "label": "高级选项",
+        "type": "object",
+        "description": "仅在启用高级设置时填写。",
+        "fields": [
+          {
+            "name": "threshold",
+            "label": "阈值",
+            "type": "number",
+            "validation": {"required": false, "min": 0, "max": 1}
+          }
+        ]
+      }
+    },
+    "array": {
+      "label": "数组",
+      "use_for": "重复表单区域，例如多个配体文件、多个待处理文件、多个任务项。只有用户需要动态添加/删除项目时使用。",
+      "required_keys": ["name", "label", "type", "itemTemplate"],
+      "optional_keys": ["description", "validation", "addButtonText", "removeButtonText", "minItems", "maxItems", "conditional", "hidden"],
+      "validation_keys": ["required", "min", "max", "unique", "message"],
+      "minimal_example": {
+        "name": "ligands_mol2",
+        "label": "待计算的小分子 MOL2 文件",
+        "type": "array",
+        "description": "上传一个或多个待处理小分子 MOL2 文件。",
+        "itemTemplate": [
+          {
+            "name": "mol2_file",
+            "label": "MOL2 文件",
+            "type": "file",
+            "validation": {"required": true, "accept": [".mol2"], "message": "请上传 .mol2 文件。"}
+          }
+        ],
+        "validation": {"required": true, "min": 1},
+        "addButtonText": "添加小分子",
+        "removeButtonText": "删除小分子",
+        "minItems": 1
+      }
+    },
+    "cascader": {
+      "label": "级联选择器",
+      "use_for": "层级选择，例如分类-子分类、模型族-具体模型。只有真实存在层级关系时才使用。",
+      "required_keys": ["name", "label", "type", "options"],
+      "optional_keys": ["description", "validation", "placeholder", "multiple", "changeOnSelect", "conditional", "hidden"],
+      "validation_keys": ["required", "message"],
+      "minimal_example": {
+        "name": "model_choice",
+        "label": "模型选择",
+        "type": "cascader",
+        "description": "按模型类别选择具体模型。",
+        "options": [
+          {
+            "value": "traditional_ml",
+            "label": "传统机器学习",
+            "children": [
+              {"value": "gbdt", "label": "GBDT"},
+              {"value": "rf", "label": "随机森林"}
+            ]
+          }
+        ],
+        "validation": {"required": false},
+        "placeholder": "请选择模型"
+      }
+    }
+  },
+  "conditional_display": {
+    "property": "conditional",
+    "operators": [
+      "equals",
+      "not_equals",
+      "contains",
+      "not_contains",
+      "greater_than",
+      "less_than",
+      "in",
+      "not_in"
+    ],
+    "rules": [
+      "依赖字段必须先于条件字段出现在 fields 中。",
+      "复杂条件优先拆成多个简单字段，不要把业务逻辑塞进 input.json。",
+      "只有高级参数或分支参数需要条件显示时才使用 conditional。"
+    ]
+  },
+  "minimal_input_generation_rules": [
+    "先从 Kit 真实需求和 runner 代码中列出必须从 kwargs['args'] 读取的 key。",
+    "每个 fields[].name 必须与 kwargs['args'] 的 key 完全一致。",
+    "只暴露用户必须上传、必须填写或确实需要调节的字段；代码能自动推断的内容不要放进 input.json。",
+    "优先匹配 task_templates；如果没有合适任务模板，再从 field_recipes 组合字段。",
+    "字段类型必须来自 supported_field_types。不要创造平台未声明的新 type。",
+    "必填字段同时写入 formRules.required 和字段 validation.required。",
+    "有真实默认值的可选字段写入 defaultValues；没有真实默认值时不要硬塞默认值。",
+    "面向用户的 formName、description、label、description、message 全部使用中文。",
+    "文件字段的 accept、maxSize、message 放在 validation 中。",
+    "array 只用于用户需要动态添加多个项目的场景；单个文件不要用 array。",
+    "select/multiselect/cascader 只用于固定枚举；不要用于自由文本。"
+  ],
+  "field_recipes": {
+    "input_file_generic": {
+      "name": "input_file",
+      "label": "输入文件",
+      "type": "file",
+      "description": "上传该 Kit 需要处理的输入文件。",
+      "validation": {"required": true, "message": "请上传输入文件。"}
+    },
+    "input_pdb": {
+      "name": "input_pdb",
+      "label": "PDB 文件",
+      "type": "file",
+      "description": "上传需要处理的 .pdb 文件。",
+      "validation": {"required": true, "accept": [".pdb", "chemical/x-pdb"], "message": "请上传 .pdb 文件。"}
+    },
+    "input_cif": {
+      "name": "input_cif",
+      "label": "CIF 文件",
+      "type": "file",
+      "description": "上传需要处理的 .cif 文件。",
+      "validation": {"required": true, "accept": [".cif", ".mmcif"], "message": "请上传 .cif 或 .mmcif 文件。"}
+    },
+    "input_mol2": {
+      "name": "input_mol2",
+      "label": "MOL2 文件",
+      "type": "file",
+      "description": "上传需要处理的 .mol2 文件。",
+      "validation": {"required": true, "accept": [".mol2"], "message": "请上传 .mol2 文件。"}
+    },
+    "input_sdf": {
+      "name": "input_sdf",
+      "label": "SDF 文件",
+      "type": "file",
+      "description": "上传需要处理的 .sdf 文件。",
+      "validation": {"required": true, "accept": [".sdf"], "message": "请上传 .sdf 文件。"}
+    },
+    "input_csv": {
+      "name": "input_csv",
+      "label": "CSV 文件",
+      "type": "file",
+      "description": "上传需要处理的 .csv 数据表。",
+      "validation": {"required": true, "accept": [".csv", "text/csv"], "message": "请上传 .csv 文件。"}
+    },
+    "input_json": {
+      "name": "input_json",
+      "label": "JSON 配置文件",
+      "type": "file",
+      "description": "上传该 Kit 需要读取的 .json 配置文件。",
+      "validation": {"required": true, "accept": [".json", "application/json"], "message": "请上传 .json 文件。"}
+    },
+    "input_zip": {
+      "name": "input_zip",
+      "label": "ZIP 压缩包",
+      "type": "file",
+      "description": "上传包含输入文件的 .zip 压缩包。",
+      "validation": {"required": true, "accept": [".zip", "application/zip"], "message": "请上传 .zip 文件。"}
+    },
+    "complex_pdb": {
+      "name": "complex_pdb",
+      "label": "蛋白-小分子复合物结构",
+      "type": "file",
+      "description": "上传蛋白-小分子复合物结构的 PDB 文件。",
+      "validation": {"required": true, "accept": [".pdb", "chemical/x-pdb"], "message": "请上传复合物 PDB 文件。"}
+    },
+    "reference_mol2": {
+      "name": "reference_mol2",
+      "label": "参比小分子的 MOL2",
+      "type": "file",
+      "description": "上传参比小分子的 MOL2 文件。该文件应包含正确的键连信息、坐标和残基名。",
+      "validation": {"required": true, "accept": [".mol2"], "message": "请上传参比小分子的 .mol2 文件。"}
+    },
+    "ligands_mol2_array": {
+      "name": "ligands_mol2",
+      "label": "待处理小分子 MOL2 文件",
+      "type": "array",
+      "description": "上传一个或多个待处理小分子 MOL2 文件。",
+      "itemTemplate": [
+        {
+          "name": "mol2_file",
+          "label": "MOL2 文件",
+          "type": "file",
+          "validation": {"required": true, "accept": [".mol2"], "message": "请上传 .mol2 文件。"}
+        }
+      ],
+      "validation": {"required": true, "min": 1},
+      "addButtonText": "添加小分子",
+      "removeButtonText": "删除小分子",
+      "minItems": 1
+    },
+    "residue_name": {
+      "name": "residue_name",
+      "label": "小分子在 PDB 中的残基名",
+      "type": "string",
+      "description": "填写小分子在 PDB 文件中的残基名。",
+      "validation": {"required": true, "minLength": 1, "maxLength": 8, "message": "请填写残基名。"}
+    },
+    "protein_sequence": {
+      "name": "protein_sequence",
+      "label": "蛋白序列",
+      "type": "text",
+      "description": "粘贴蛋白序列。",
+      "validation": {"required": true, "message": "请填写蛋白序列。"}
+    },
+    "smiles": {
+      "name": "smiles",
+      "label": "SMILES",
+      "type": "text",
+      "description": "粘贴一个或多个小分子的 SMILES。",
+      "validation": {"required": true, "message": "请填写 SMILES。"}
+    },
+    "strict_mode": {
+      "name": "strict_mode",
+      "label": "严格模式",
+      "type": "boolean",
+      "description": "启用后会把格式警告视为失败。",
+      "validation": {"required": false}
+    },
+    "ph": {
+      "name": "ph",
+      "label": "pH",
+      "type": "number",
+      "description": "用于质子化或加氢判断的 pH。",
+      "validation": {"required": false, "min": 0, "max": 14, "message": "pH 必须在 0-14 之间。"}
+    }
+  },
+  "task_templates": {
+    "single_file_processor": {
+      "formName": "单文件处理",
+      "description": "上传一个输入文件并运行 Kit。",
+      "tags": ["file", "generic", "minimal"],
+      "defaultValues": {},
+      "required": ["input_file"],
+      "field_recipes": ["input_file_generic"]
+    },
+    "pdb_validator": {
+      "formName": "PDB 数据有效性验证",
+      "description": "上传一个 PDB 文件，检查文件是否存在、格式是否可读以及是否包含基础结构记录。",
+      "tags": ["pdb", "structure", "validator", "minimal"],
+      "defaultValues": {},
+      "required": ["input_pdb"],
+      "field_recipes": ["input_pdb"]
+    },
+    "pdb_validator_with_strict_mode": {
+      "formName": "PDB 数据有效性验证",
+      "description": "上传一个 PDB 文件并选择是否启用严格模式。",
+      "tags": ["pdb", "structure", "validator", "strict"],
+      "defaultValues": {"strict_mode": false},
+      "required": ["input_pdb"],
+      "field_recipes": ["input_pdb", "strict_mode"]
+    },
+    "cif_to_pdb_converter": {
+      "formName": "CIF 转 PDB",
+      "description": "上传一个 CIF/mmCIF 文件，将其转换为 PDB 文件。",
+      "tags": ["cif", "pdb", "converter", "structure"],
+      "defaultValues": {},
+      "required": ["input_cif"],
+      "field_recipes": ["input_cif"]
+    },
+    "mol2_to_xyz_converter": {
+      "formName": "MOL2 转 XYZ",
+      "description": "上传一个 MOL2 文件，将其转换为 XYZ 坐标文件。",
+      "tags": ["mol2", "xyz", "converter", "ligand"],
+      "defaultValues": {},
+      "required": ["input_mol2"],
+      "field_recipes": ["input_mol2"]
+    },
+    "csv_model_baseline": {
+      "formName": "CSV 表格建模基线",
+      "description": "上传一个 CSV 数据集，运行表格模型基线。",
+      "tags": ["csv", "machine-learning", "baseline", "table"],
+      "defaultValues": {},
+      "required": ["input_csv"],
+      "field_recipes": ["input_csv"]
+    },
+    "protein_ligand_complex_basic": {
+      "formName": "蛋白-小分子复合物输入",
+      "description": "上传复合物 PDB、配体 MOL2，并填写配体残基名。",
+      "tags": ["protein", "ligand", "complex", "mol2", "pdb"],
+      "defaultValues": {},
+      "required": ["complex_pdb", "reference_mol2", "residue_name"],
+      "field_recipes": ["complex_pdb", "reference_mol2", "residue_name"]
+    },
+    "multi_ligand_mol2": {
+      "formName": "多配体 MOL2 输入",
+      "description": "上传一个或多个待处理小分子 MOL2 文件。",
+      "tags": ["ligand", "mol2", "array", "batch"],
+      "defaultValues": {},
+      "required": ["ligands_mol2"],
+      "field_recipes": ["ligands_mol2_array"]
+    },
+    "sponge_fep_reference": {
+      "formName": "配置与选项",
+      "description": "填写以下内容进行炼金术自由能计算。该模板来自复杂表单示例，真实 Kit 开发时应按实际代码继续裁剪。",
+      "tags": ["sponge-fep", "fep", "free-energy", "complex", "array"],
+      "defaultValues": {"complex_pdb": "", "reference_mol2": "", "residue_name": "", "ligands_mol2": "", "msteps": 50000, "ptimes": 1.0, "etimes": 1.0},
+      "required": ["complex_pdb", "reference_mol2", "residue_name", "ligands_mol2"],
+      "fields": [
+        "complex_pdb",
+        "reference_mol2",
+        "residue_name",
+        "ligands_mol2_array",
+        {
+          "name": "msteps",
+          "label": "最小化步数",
+          "type": "number",
+          "description": "每次自由能模拟执行最小化的步数。",
+          "validation": {"required": false, "min": 50000, "max": 250000, "message": "支持的最小化步数在 50000-250000 之间。"}
+        },
+        {
+          "name": "ptimes",
+          "label": "预平衡时间（ns）",
+          "type": "number",
+          "description": "每次自由能模拟执行预平衡的时间（ns）。时间越长，消耗计算资源越多。",
+          "validation": {"required": false, "min": 0.0, "max": 5.0, "message": "支持的预平衡时间在 0-5 ns 之间。"}
+        },
+        {
+          "name": "etimes",
+          "label": "平衡模拟时间（ns）",
+          "type": "number",
+          "description": "每次自由能模拟执行平衡模拟的时间（ns）。时间越长，消耗计算资源越多。",
+          "validation": {"required": false, "min": 0.0, "max": 5.0, "message": "支持的平衡模拟时间在 0-5 ns 之间。"}
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Asterfire Image Path Calibrator"
+  short_description: "优先读取镜像目录结构说明，校准 Asterfire Kit 中镜像内置代码、权重和 helper 脚本的绝对路径。"
+  default_prompt: "使用该 Skill 优先读取 Asterfire-dockerfile-builder 生成的 image_layout.md / 镜像目录结构说明；没有目录说明时再读取 Dockerfile 和 Kit 主入口代码，识别镜像内资源路径与运行时 workspace 路径的混淆，并把代码改成使用明确的镜像绝对路径；无法推断时先询问用户。"
