@@ -252,83 +252,16 @@ project_root = Path.cwd() / "ProteinMPNN-main"
 
 ---
 
-## 仓库结构建议
-
-本仓库建议保持如下结构：
-
-```text
-asterfire-skills/
-├── asterfire-kit-development/
-│   ├── SKILL.md
-│   ├── agents/
-│   ├── assets/
-│   ├── references/
-│   └── scripts/
-├── Asterfire-project-to-kit-adapter/
-│   ├── SKILL.md
-│   ├── agents/
-│   ├── assets/
-│   ├── references/
-│   └── scripts/
-├── Asterfire-dockerfile-builder/
-│   ├── SKILL.md
-│   ├── agents/
-│   ├── assets/
-│   ├── references/
-│   └── scripts/
-├── Asterfire-image-rules/
-│   ├── SKILL.md
-│   ├── agents/
-│   ├── assets/
-│   ├── references/
-│   └── scripts/
-└── README.md
-```
-
-每个 Skill 目录至少应包含：
-
-- `SKILL.md`：Skill 主说明文件。
-- `agents/openai.yaml`：面向 OpenAI / Codex 的 Skill 元信息。
-- `references/`：规范、注册表、表单字段知识库等参考资料。
-- `scripts/`：辅助检查、生成或迁移脚本。
-- `assets/`：模板、示例、可复用资源。
-
----
-
-## 更新与维护建议
-
-当平台规则变化时，建议优先更新对应 Skill 中的 `references/` 文件，而不是只改 `SKILL.md`。
-
-常见维护内容：
-
-- 新增或修改 SIF：更新 `references/sif_registry.json`。
-- 新增平台表单字段类型：更新 `references/input_form_catalog.json`。
-- 修改 Kit 开发规范：更新 `references/kit-development-rules.md`。
-- 修改普通项目适配规则：更新 `references/project-to-kit-porting-rules.md`。
-- 修改 Dockerfile 构建规范：更新 `references/dockerfile-rules.md`。
-- 修改镜像路径推断逻辑：更新 `references/image-layout-priority-rules.md`。
-
-维护后可以重新运行：
-
-```bash
-npx skills add https://github.com/Nanoer-Wang/asterfire-skills.git --list
-```
-
-确认仓库中的 Skill 能够被正确识别。
-
----
 
 ## 注意事项
 
-1. 如果希望其他人可以直接通过 `npx skills add` 安装，本 GitHub 仓库需要保持公开可访问。
-2. 如果仓库是私有仓库，未配置权限的用户通常无法通过公开 URL 拉取 Skill。
-3. 在 WSL 或国内网络环境中，如果 GitHub 访问不稳定，建议先确认本地可以正常 `git clone` 该仓库。
-4. 安装前建议先运行 `--list`，确认仓库中的 Skill 都能被正确发现。
-5. 如果只需要某一个 Skill，可先通过 `--list` 查看准确名称，再按实际 CLI 支持的参数选择性安装。
+1. 在 WSL 或国内网络环境中，如果 GitHub 访问不稳定，建议先确认本地可以正常 `git clone` 该仓库。
+2. 安装前建议先运行 `--list`，确认仓库中的 Skill 都能被正确发现。
+3. 如果只需要某一个 Skill，可先通过 `--list` 查看准确名称，再按实际 CLI 支持的参数选择性安装。
 
 ---
 
 ## License
 
-请根据项目实际情况补充许可证，例如 MIT、Apache-2.0 或内部使用声明。
+项目使用MIT许可协议。
 
