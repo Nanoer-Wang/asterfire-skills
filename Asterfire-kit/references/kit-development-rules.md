@@ -359,6 +359,63 @@ return {
 
 必要时可加入 Markdown 表格、Mermaid、KaTeX 或 molstar 结构渲染块。报告中的路径优先使用当前工作目录相对路径。报告内容用中文。
 
+## `report.md` 渲染规范
+
+Kit 生成 `report.md` 时，必须根据输出文件类型使用对应的平台渲染方式：
+
+### 结构文件 → 使用 molstar 代码块（交互式 3D 展示）
+
+支持格式：`.pdb`, `.gro`, `.cif`, `.mmcif`, `.pdbqt`
+
+写法：
+
+````markdown
+```molstar
+./output_structure.pdb
+```
+````
+
+### 轨迹文件 → 使用 mdtraj 代码块（交互式轨迹回放）
+
+需要先将轨迹转为 `.mdtraj` 格式（使用 grotoxyz 等工具将 GRO 轨迹转为 PDB + 二进制 XYZ + mdtraj JSON）。
+
+支持格式：`.xtc`, `.trr`, `.dcd`（需先转换为 `.mdtraj`）
+
+写法：
+
+````markdown
+```mdtraj
+./trajectory.mdtraj
+```
+````
+
+### 数据图表 → matplotlib 渲染为 PNG 后用 markdown 图片嵌入
+
+适用场景：`.xvg` 数据画曲线图、`.xpm` 解析后画自由能图、各类分析结果图表。
+
+写法：
+
+```markdown
+![图表描述](./plot.png)
+```
+
+要求：在 Kit 主函数中用 matplotlib 生成 PNG，`report.md` 中用相对路径引用。
+
+### 统计表格 → 标准 markdown 表格
+
+适用场景：汇总数据、参数回显、关键指标对比。
+
+直接在 `report.md` 中用 markdown 表格语法。
+
+### 渲染方式确认流程
+
+在开发 Kit 时，如果 Kit 的输出中包含可视化文件（结构文件、轨迹文件、数据图表等），必须：
+
+1. **先询问用户**希望在 `report.md` 中使用什么样的渲染方式。
+2. **提供上述默认方案**作为推荐选项展示给用户。
+3. 如果用户不答复或明确同意，则按照上述默认方案生成 `report.md`。
+4. 如果用户提出不同需求，则按照用户指定的渲染方式生成。
+
 ## 文件路径规则
 
 - 所有输出必须写入 `os.getcwd()` 或 `Path.cwd()`。

@@ -191,11 +191,12 @@ LABEL Author="Your Name" \
 2. Dockerfile 代码块。
 3. “构建命令”。
 4. “查看镜像命令”。
-5. “登录阿里云镜像仓库命令”。
-6. “标记镜像命令”。
-7. “上传镜像命令”。
-8. “镜像内目录结构说明”。
-9. “Kit 主函数中路径使用建议”。
+5. “Smoke Test 验证命令”（验证镜像可用后再推送）。
+6. “登录阿里云镜像仓库命令”。
+7. “标记镜像命令”。
+8. “上传镜像命令”。
+9. “镜像内目录结构说明”。
+10. “Kit 主函数中路径使用建议”。
 
 ## 标准构建与上传命令模板
 
@@ -325,6 +326,99 @@ mpnn_dir = Path.cwd() / "ProteinMPNN-main"
 ```
 
 因为 `Path.cwd()` 在平台运行时通常是 `/workspace`。
+
+## 镜像 Smoke Test 验证规范
+
+Dockerfile 构建完成后，**必须先通过 Smoke Test 验证镜像可用性，再推送到阿里云镜像仓库**。Smoke Test 以 `docker run` 命令的形式执行，目的是在本地验证镜像没有问题。
+
+### Smoke Test 必须覆盖的两个层次
+
+#### 1. 模块/依赖验证
+
+验证镜像内所有关键依赖、工具和路径都正确安装：
+
+```bash
+# 验证 Python 和关键包可以正常导入
+docker run --rm <image_name>:<version> python -c "
+import sys; print('Python:', sys.version)
+import numpy; print('numpy:', numpy.__version__)
+import torch; print('torch:', torch.__version__)
+# ... 根据项目实际依赖添加
+"
+
+# 验证命令行工具存在且可执行
+docker run --rm <image_name>:<version> bash -c "
+which gmx && gmx --version
+which python && python --version
+# ... 根据项目实际工具添加
+"
+
+# 验证固化文件和权重存在
+docker run --rm <image_name>:<version> bash -c "
+test -f /opt/ProteinMPNN/protein_mpnn_run.py && echo 'OK: protein_mpnn_run.py exists'
+test -d /opt/ProteinMPNN/vanilla_model_weights && echo 'OK: weights dir exists'
+ls -lh /opt/ProteinMPNN/vanilla_model_weights/
+"
+```
+
+#### 2. 端到端基础案例验证
+
+验证镜像能端到端跑通一个最小的真实任务。案例设计原则：
+
+- **优先参考官方仓库提供的基础测试命令**。例如开发 BindCraft Kit 时，BindCraft 官方 GitHub 提供了一个专门的基础实验 shell 命令，应直接使用该命令作为 Smoke Test 案例。
+- 如果官方没有提供测试命令，或官方测试过于耗时，可以**自行设计一个最小案例**，但必须能覆盖核心计算流程（输入 → 计算 → 输出文件生成）。
+- 案例应尽量轻量、快速完成（建议 5 分钟内），不要使用大型生产数据。
+- 必须验证输出文件确实生成。
+
+```bash
+# 端到端测试示例（以 ProteinMPNN 为例）
+# 挂载测试输入文件，运行核心计算，检查输出
+docker run --rm \
+  -v $(pwd)/test_inputs:/workspace \
+  -w /workspace \
+  <image_name>:<version> \
+  bash -c "
+    python /opt/ProteinMPNN/protein_mpnn_run.py \
+      --pdb_path /workspace/test.pdb \
+      --out_folder /workspace/output \
+      --num_seq_per_target 2 \
+      --sampling_temp 0.1 \
+      --batch_size 1 \
+    && test -d /workspace/output \
+    && echo 'SMOKE TEST PASSED: output generated' \
+    || echo 'SMOKE TEST FAILED'
+  "
+```
+
+```bash
+# 端到端测试示例（以 GROMACS 为例）
+# 参考 GROMACS 官方提供的基础测试
+docker run --rm \
+  -v $(pwd)/test_inputs:/workspace \
+  -w /workspace \
+  <image_name>:<version> \
+  bash -c "
+    gmx pdb2gmx -f test.pdb -o processed.gro -water spce -ff amber99sb-ildn -ignh \
+    && test -f /workspace/processed.gro \
+    && echo 'SMOKE TEST PASSED' \
+    || echo 'SMOKE TEST FAILED'
+  "
+```
+
+### Smoke Test 设计确认流程
+
+在为用户生成 Dockerfile 和构建命令时，如果需要生成 Smoke Test：
+
+1. **先询问用户**是否有官方推荐的测试命令或现成的测试数据。
+2. **提供默认方案**：基于项目类型和镜像内容，推荐模块验证命令 + 一个最小端到端案例。
+3. 如果用户不答复或明确同意，按默认方案生成 Smoke Test 命令。
+4. 如果用户提供了官方测试命令或自定义需求，按用户方案生成。
+
+### Smoke Test 在工作流中的位置
+
+标准流程：`docker build` → **Smoke Test** → `docker tag` → `docker push`
+
+只有 Smoke Test 全部通过后，才应执行 `docker tag` 和 `docker push` 上传镜像。如果 Smoke Test 失败，必须排查问题、修改 Dockerfile、重新构建并再次测试。
 
 ## 镜像目录结构说明必须包含
 

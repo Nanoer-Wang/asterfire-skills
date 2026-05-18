@@ -274,6 +274,64 @@ python scripts/demo_cli.py create-template --output demos
 - 必须打印足够调试日志：incoming args、当前工作目录、关键命令、stdout / stderr、生成文件路径、输出文件是否存在。
 - 每个 Kit 运行时必须在当前工作目录生成 `report.md`。
 - `report.md` 必须使用中文，包含运行状态、输入参数、输出产物、文件是否存在、警告和假设；必要时可包含 Markdown 表格、Mermaid、KaTeX、molstar 结构渲染块。
+- `report.md` 中涉及可视化输出时，必须遵守「report.md 渲染规范」（见下文）。
+
+## report.md 渲染规范
+
+Kit 生成 `report.md` 时，必须根据输出文件类型使用对应的平台渲染方式：
+
+### 结构文件 → 使用 molstar 代码块（交互式 3D 展示）
+
+支持格式：`.pdb`, `.gro`, `.cif`, `.mmcif`, `.pdbqt`
+
+写法：
+
+````markdown
+```molstar
+./output_structure.pdb
+```
+````
+
+### 轨迹文件 → 使用 mdtraj 代码块（交互式轨迹回放）
+
+需要先将轨迹转为 `.mdtraj` 格式（使用 grotoxyz 等工具将 GRO 轨迹转为 PDB + 二进制 XYZ + mdtraj JSON）。
+
+支持格式：`.xtc`, `.trr`, `.dcd`（需先转换为 `.mdtraj`）
+
+写法：
+
+````markdown
+```mdtraj
+./trajectory.mdtraj
+```
+````
+
+### 数据图表 → matplotlib 渲染为 PNG 后用 markdown 图片嵌入
+
+适用场景：`.xvg` 数据画曲线图、`.xpm` 解析后画自由能图、各类分析结果图表。
+
+写法：
+
+```markdown
+![图表描述](./plot.png)
+```
+
+要求：在 Kit 主函数中用 matplotlib 生成 PNG，`report.md` 中用相对路径引用。
+
+### 统计表格 → 标准 markdown 表格
+
+适用场景：汇总数据、参数回显、关键指标对比。
+
+直接在 `report.md` 中用 markdown 表格语法。
+
+### 渲染方式确认流程
+
+在开发 Kit 时，如果 Kit 的输出中包含可视化文件（结构文件、轨迹文件、数据图表等），必须：
+
+1. **先询问用户**希望在 `report.md` 中使用什么样的渲染方式。
+2. **提供上述默认方案**作为推荐选项展示给用户。
+3. 如果用户不答复或明确同意，则按照上述默认方案生成 `report.md`。
+4. 如果用户提出不同需求，则按照用户指定的渲染方式生成。
 - 如果平台不支持某种文件类型，必须使用 `Annotated[str, FileType(...)]` 自定义：
 
 ```python
@@ -343,6 +401,7 @@ Scatter / gather 场景必须遵守：
 - 找到 `config/input.json`、`config/configure.json`、`config/long_description.md`、`demos/demos.json`、`Makefile`。
 - 检查 `input.json` 是否只包含真实需要的参数，并确认字段 type、validation、conditional 均来自平台已支持定义。
 - 检查 `demos/demos.json` 是否存在，Demo 的 `value` 是否与 `input.json` 字段一致，引用文件是否放在 `demos/` 目录下。
+- 如果 Kit 输出中包含可视化文件（结构文件、轨迹文件、数据图表等），先询问用户希望在 `report.md` 中使用什么渲染方式，并展示默认方案（molstar / mdtraj / matplotlib PNG / markdown 表格）。用户不答复或同意则按默认方案执行，否则按用户需求调整。
 
 修改时：
 
