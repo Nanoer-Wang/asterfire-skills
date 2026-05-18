@@ -1,5 +1,5 @@
 ---
-name: asterfire-image-path-calibrator
+name: asterfire-image-rules
 description: 校准 Asterfire 平台 Kit 主入口代码中对镜像内置项目、权重、脚本和资源文件的路径引用。优先读取 Asterfire-dockerfile-builder 生成的镜像目录结构说明；若没有目录说明，再解析 Dockerfile 中 COPY/ENV/WORKDIR 固化到镜像里的目录。凡涉及运行时 workspace 与镜像绝对路径区分、.pt/.pth/.ckpt 权重路径、helper_scripts/protein_mpnn_run.py 等镜像内程序路径匹配、将本地项目路径映射为容器内绝对路径，都使用本 Skill。
 ---
 

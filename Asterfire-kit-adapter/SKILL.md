@@ -1,5 +1,5 @@
 ---
-name: asterfire-project-to-kit-adapter
+name: asterfire-kit-adapter
 description: 将普通 Python/命令行项目改造成 Asterfire 平台 Kit。凡涉及把已有项目接入平台、补写 class runner(Tool)、确定 DISPLAY_NAME/NETWORK/CPU/GPU/SIF、从 SIF 注册表选镜像、生成 config/input.json、config/configure.json、config/long_description.md、report.md、@tool_io 输出端口、kwargs['args'] 参数映射或打包交付，都使用本 Skill。
 ---
 

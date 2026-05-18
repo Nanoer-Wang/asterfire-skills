@@ -1,4 +1,4 @@
-# asterfire-project-to-kit-adapter
+# asterfire-kit-adapter
 
 用于把普通项目代码适配为 Asterfire 平台 Kit 的 Codex/OpenAI Skill。
 
