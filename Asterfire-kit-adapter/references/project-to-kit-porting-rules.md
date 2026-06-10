@@ -94,7 +94,7 @@ def run(input_file, output_dir, threshold=0.5):
 - 创建当前工作目录下的输出路径。
 - 调用原函数。
 - 检查输出是否存在。
-- 写中文 report.md。
+- 写专业中文 report.md，展示关键结果和可视化，不直接展开运行日志。
 - return dict。
 
 ### 命令行包装式
@@ -111,14 +111,15 @@ python predict.py --input xxx.csv --output result.csv
 completed = subprocess.run(command, cwd=str(cwd), text=True, capture_output=True, check=False)
 ```
 
-必须打印和写入报告：
+必须打印或记录：
 
 - command
 - returncode
-- stdout
-- stderr
 - 输出文件路径
 - 文件是否存在
+- 详细命令输出和错误信息写入 `run.log`、`stdout.log`、`stderr.log` 等文件
+
+注意：`report.md` 不直接展示 stdout/stderr 全文，只在“如何查看结果”中说明日志文件位置。
 
 ### 拆分 utils 式
 
@@ -166,7 +167,8 @@ my-kit/
 ├── config/
 │   ├── configure.json
 │   ├── input.json
-│   └── long_description.md
+│   ├── long_description.md
+│   └── long_description_en.md
 ├── demos/
 │   ├── demos.json
 │   ├── sample.csv
@@ -217,6 +219,30 @@ my-kit/
 - 多文件字段可以写成数组，例如 `"input_files": ["a.pdb", "b.pdb"]`。
 - Demo 文件应尽量小，优先用于快速调试，不要把大型生产数据放进 Demo。
 - 修改 `input.json` 字段名、必填项或文件输入后，必须同步更新 `demos.json`。
+
+### GitHub/开源项目案例迁移为 Demo
+
+将 GitHub 项目、论文代码仓库或开源 CLI 改造成 Kit 时，`demos/` 不能只保留模板示例，应优先迁移原仓库自带的官方案例。
+
+必须检查的来源：
+
+| 来源 | 需要提取什么 | Demo 转换方式 |
+| --- | --- | --- |
+| `README.md` / `docs/` | 官方快速开始命令、推荐参数、示例输出说明 | 把命令行参数映射到 `input.json` 字段，并写入 `demos.json.value` |
+| `examples/` / `example/` / `demo/` / `sample/` | 小型示例输入文件、配置文件、脚本 | 复制轻量文件到 `demos/`，路径改为 Demo 相对文件名 |
+| `tests/` / `test/` | 可快速运行的测试输入、最小用例 | 优先转成 smoke-test Demo，验证入口可跑通 |
+| `notebooks/` / `tutorials/` | 教程中的典型流程和参数组合 | 提炼为一个或多个前端 Demo，不直接要求用户运行 notebook |
+| `scripts/` | 官方示例脚本和预置参数 | 解析核心参数，转成表单参数和 Demo 描述 |
+
+迁移原则：
+
+1. 每个主要运行模式、任务类型或常见输入格式，尽量配置一个独立 Demo。
+2. Demo 名称和描述要面向平台用户，说明该案例对应什么功能、输入什么、会得到什么输出。
+3. 优先选择小文件、短耗时、确定性强的官方案例；不要把超大数据集或长时间训练任务作为默认 Demo。
+4. 原示例文件若过大，可以裁剪为最小可运行子集；若不能内置，需要说明原因，并保留一个用户上传文件版 Demo。
+5. 不依赖运行时联网下载示例数据；需要模型权重或公共数据时，应在镜像/Kit 内置，或在文档中说明用户需自行提供。
+6. 如果原项目完全没有案例，至少根据 README 的最小命令和可推断输入构造一个 smoke-test Demo；确实不能构造时，在交付说明里明确原因。
+7. `demos.json` 中不要保留 GitHub 原命令的旧参数名；必须全部使用平台 `input.json` 字段名。
 
 最小文件输入模板：
 
@@ -269,18 +295,55 @@ MOL2File = Annotated[str, FileType(".mol2", "MOL2 小分子文件")]
 
 ## report.md 规则
 
-每次运行都应生成 `report.md`。报告至少包含：
+每次运行都应生成 `report.md`。报告面向平台用户，不是日志转储。
 
-- 运行状态。
-- runner 配置，尤其是 SIF、CPU、GPU、NETWORK。
-- 输入参数。
-- 关键命令或调用函数。
-- 输出产物列表。
-- 文件是否存在。
-- stdout/stderr 摘要。
-- 警告和假设。
+报告至少包含：
 
-报告中文。
+- 运行概览：成功、失败或部分成功；Kit 名称、版本、关键输入和主要输出。
+- 方法说明：说明调用了原项目的哪个函数、脚本或命令，关键参数代表什么。
+- 结果展示与说明：展示主要结果表格、指标、候选文件和解释。
+- 可视化结果：结构文件、图片或由数据生成的图必须直接嵌入。
+- 如何查看结果：说明主要输出文件、结构文件、图表文件和日志文件在哪里。
+- 后续分析建议：给出可执行的下一步建议。
+
+结果展示规则：
+
+- 主要输出包含 `.pdb`、`.cif/.mmcif`、`.sdf` 时，必须使用 `molstar` 代码块展示。
+- 多个文件需要同空间展示时，写在同一个 `molstar` 块中，例如：
+
+````markdown
+```molstar
+./1.pdb
+./2.pdb
+./candidate.sdf
+```
+````
+
+- 输出包含 `.png`、`.jpg/.jpeg`、`.svg`、`.webp` 图片时，必须使用 Markdown 图片语法展示，并解释图片含义。
+- 输出只有 CSV/JSON/TSV/XVG 等数据但用户需要图形理解时，先用 matplotlib 生成 PNG/SVG，再嵌入报告。
+- 关键指标和 Top N 结果应使用 Markdown 表格汇总，完整大表另存为 CSV/JSON。
+
+禁止：
+
+- 不要在报告中直接展示 stdout/stderr 全文、完整外部程序日志或 Traceback 堆栈。
+- 不要把报告写成纯粹的文件清单。
+- 不要只让用户下载结果，重要结果必须在报告正文中可见。
+
+日志处理：
+
+- 命令输出、错误输出和异常堆栈写入 `run.log`、`stdout.log`、`stderr.log` 或原项目日志文件。
+- 日志文件可以在 `@tool_io(outputs)` 中声明为普通输出文件。
+- `report.md` 只需要说明日志文件位置，例如“详细运行日志保存在 `run.log`，用于排错”。
+
+## configure 与详情页规则
+
+- `config/configure.json` 的 `type` 固定为 `"kit"`。
+- 每次修改 Kit 都必须更新 `version`，并同步检查 `Makefile` 中的 `VERSION`。
+- `description` 要用户友好，说明 Kit 能做什么、输入什么、输出什么，但最高不能超过 400 个字符。
+- 必须同时维护 `config/long_description.md` 和 `config/long_description_en.md`。
+- 详情页固定包含：`概述/Overview`、`功能/Features`、`输入/Inputs`、`输出/Outputs`、`注意事项/Notes`、`参考文献/References`。
+- 输入章节必须用表格，列为：参数、类型、必填、说明。英文版对应为 Parameter、Type、Required、Description。
+- 输出章节要解释主要结果是什么、怎么看、适合什么后续分析。
 
 ## Makefile 规则
 
@@ -315,11 +378,19 @@ clean:
 - [ ] `@tool_io(outputs)` 与 return key 一致。
 - [ ] 输出写入当前工作目录。
 - [ ] 返回相对路径。
-- [ ] 生成中文 `report.md`。
-- [ ] 日志包含 incoming args、cwd、SIF、关键命令、stdout/stderr、输出文件检查。
+- [ ] 生成中文 `report.md`，且包含运行概览、方法说明、结果展示与说明、可视化结果、如何查看结果、后续分析建议。
+- [ ] `report.md` 没有直接展开 stdout/stderr 或大段运行日志。
+- [ ] 若输出包含 `.pdb/.cif/.sdf`，报告中已有 molstar 块。
+- [ ] 若输出包含图片或可绘图数据，报告中已有图片展示或 matplotlib 生成图。
+- [ ] 日志包含 incoming args、cwd、SIF、关键命令、返回码、输出文件检查，并保存为日志文件。
 - [ ] JSON 语法通过。
 - [ ] Python 语法通过。
 - [ ] `input_form_cli.py validate config/input.json` 通过。
 - [ ] 存在 `demos/demos.json`，且 Demo 的 `value` 覆盖必填字段、引用文件真实存在。
+- [ ] 如果源项目来自 GitHub/开源仓库，已尽可能迁移 README、docs、examples、tests、notebooks/tutorials 中的官方案例为 Kit Demo，并覆盖主要运行模式。
 - [ ] 没有本机绝对路径硬编码。
 - [ ] 没有无关字段塞进 input.json。
+
+## 打包交付规则
+
+每次适配或修改完成后，都必须重新打包生成新版 zip。交付说明应指向更新后的压缩包，并说明如果 `make build` 或 `adam-cli` 无法运行的原因。

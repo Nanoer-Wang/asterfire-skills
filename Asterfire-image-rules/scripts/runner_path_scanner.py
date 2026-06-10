@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, List
 
 SCRIPT_RE = re.compile(r"(?:python|python3)\s+([^\s;&|]+\.py)")
-WEIGHT_RE = re.compile(r"[\w./${}+-]+\.(?:pt|pth|ckpt|safetensors)")
+WEIGHT_RE = re.compile(r"[\w./${}+-]+\.(?:pt|pth|ckpt|safetensors|bin|onnx|pkl)")
 CWD_RISK_RE = re.compile(r"(?:Path\.cwd\(\)|os\.getcwd\(\)|cwd\s*/\s*['\"][^'\"]+['\"])")
 EXEC_CWD_RE = re.compile(r"cwd\s*=\s*([^,)]+)")
 
@@ -41,7 +41,7 @@ def scan_runner(path: str) -> Dict[str, object]:
     if any(f["type"] == "python_script_call" for f in findings):
         recommendations.append("发现 python xxx.py 调用：若脚本来自镜像内项目，应设置 execCmd cwd 为镜像项目根目录，或改成绝对脚本路径。")
     if any(f["type"] == "model_weight_path" for f in findings):
-        recommendations.append("发现模型权重路径：.pt/.pth/.ckpt 应使用镜像内绝对路径，并在运行前检查存在性。")
+        recommendations.append("发现模型权重路径：.pt/.pth/.ckpt/.safetensors 等应使用镜像内绝对路径，并在运行前检查存在性和文件非空；多模型分支要逐一核对权重。")
 
     return {"runner": path, "findings": findings, "recommendations": recommendations}
 

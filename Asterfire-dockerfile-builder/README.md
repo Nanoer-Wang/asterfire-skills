@@ -10,3 +10,9 @@
 - 给后续 Kit 主入口代码开发者提供可读的镜像目录结构说明。
 
 推荐 Skill 名称：`asterfire-dockerfile-builder`。
+
+
+## 更新规则
+
+- 基础镜像可按项目自由选择；Docker Hub 来源镜像建议使用 `m.daocloud.io/docker.io/` 前缀加速。
+- 深度学习项目必须检查并固化运行必需模型权重；小型 demo 输入文件应放入 `demos/`。

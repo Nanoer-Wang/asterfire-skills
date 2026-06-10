@@ -1,6 +1,6 @@
 ---
 name: asterfire-kit-adapter
-description: 将普通 Python/命令行项目改造成 Asterfire 平台 Kit。凡涉及把已有项目接入平台、补写 class runner(Tool)、确定 DISPLAY_NAME/NETWORK/CPU/GPU/SIF、从 SIF 注册表选镜像、生成 config/input.json、config/configure.json、config/long_description.md、report.md、@tool_io 输出端口、kwargs['args'] 参数映射或打包交付，都使用本 Skill。
+description: 将普通 Python/命令行项目改造成 Asterfire 平台 Kit。凡涉及把已有项目接入平台、补写 class runner(Tool)、确定 DISPLAY_NAME/NETWORK/CPU/GPU/SIF、从 SIF 注册表选镜像、生成 config/input.json、config/configure.json、config/long_description.md、config/long_description_en.md、report.md、@tool_io 输出端口、kwargs['args'] 参数映射或打包交付，都使用本 Skill。
 ---
 
 # 普通项目 → 平台 Kit 适配 Skill
@@ -102,7 +102,7 @@ my-kit/
 └── Makefile
 ```
 
-如果原项目已有清晰的函数入口，优先 `import` 后调用；如果原项目是命令行脚本且重构风险高，可以在 `runner.call()` 中用 `subprocess.run()` 调用原脚本，但必须记录命令、stdout、stderr、返回码，并生成中文 `report.md`。
+如果原项目已有清晰的函数入口，优先 `import` 后调用；如果原项目是命令行脚本且重构风险高，可以在 `runner.call()` 中用 `subprocess.run()` 调用原脚本，但必须记录命令和返回码，把详细运行输出写入 `run.log` 等日志文件，并生成专业中文 `report.md`。`report.md` 不直接展示 stdout/stderr 或大段运行日志。
 
 ### 4. 必须保持四个映射一致
 
@@ -187,6 +187,18 @@ my-kit/
 - 每个 Demo 至少要覆盖 `formRules.required` 中的全部必填字段。
 - Demo 文件应尽量小，适合快速调试；不要放入过大的生产数据。
 
+#### GitHub 项目适配时的 Demo 迁移规则
+
+如果普通项目来自 GitHub、论文代码仓库或开源命令行工具，不能只写一个占位 Demo。必须优先从原仓库中提取可复现案例，并尽可能配置成平台 Kit 的 `demos/demos.json`：
+
+1. 扫描 `README.md`、`docs/`、`examples/`、`example/`、`demo/`、`sample/`、`test/`、`tests/`、`notebooks/`、`tutorials/`、`scripts/` 中的官方示例命令、示例输入文件和测试用例。
+2. 将原项目 README 或文档中的典型运行命令转写为平台表单参数；每一种主要运行模式、任务类型或常见输入格式，尽量配置为一个独立 Demo。
+3. Demo 名称要让用户看懂用途，例如“蛋白结构打分示例”“SMILES 批量预测示例”“仅生成力场文件示例”，不要只写 `demo1/demo2`。
+4. 原仓库自带的小型示例文件应复制到 `demos/` 目录，并在 `demos.json` 中用相对文件名引用；如果原示例数据过大，只保留可快速运行的最小子集或说明无法内置大文件。
+5. 如果原项目示例依赖外部下载、联网或大型模型数据，不要把联网下载步骤做成前端 Demo；应优先使用随 Kit/镜像内置的轻量示例，或在 Demo 描述中说明需要用户自行上传对应文件。
+6. 如果原仓库没有明确示例，也要基于 README 的最小命令和测试文件构造至少一个可运行 Demo；确实无法构造时，需要在交付说明中明确原因。
+7. 修改输入字段、运行模式或示例文件后，必须同步更新所有 GitHub 案例迁移来的 Demo，避免 Demo 仍使用旧参数名。
+
 对于最小文件输入模板，`demos/demos.json` 可以写成：
 
 ```json
@@ -222,6 +234,7 @@ python scripts/demo_cli.py validate --input config/input.json --demos demos/demo
 - `config/input.json` 的 label、description、message
 - `config/configure.json` 的 display_name、description、tags
 - `config/long_description.md`
+- `config/long_description_en.md`
 - `demos/demos.json` 和所引用的示例文件
 - 运行时生成的 `report.md`
 - 调试日志中需要给平台用户看的说明
@@ -237,9 +250,50 @@ python scripts/demo_cli.py validate --input config/input.json --demos demos/demo
 - 输出文件必须写到当前工作目录，即 `Path.cwd()` 或 `os.getcwd()`。
 - 返回路径优先使用当前工作目录下的相对路径。
 - 必须生成中文 `report.md`。
-- 必须打印 incoming args、当前工作目录、关键命令、stdout/stderr、输出文件是否存在。
+- 必须打印 incoming args、当前工作目录、关键命令、返回码、输出文件是否存在。
+- 详细命令输出和异常堆栈写入 `run.log`、`stdout.log`、`stderr.log` 等日志文件；日志文件可作为输出返回，但 `report.md` 不直接展开。
 - 必须有输入文件存在性检查。
 - `SIF` 必须是真实可用镜像，不能是 `example`、`TODO`、`待定`、空字符串或 `None`。
+
+### 9. report.md 必须专业展示结果，不展示运行日志
+
+`report.md` 至少包含：运行概览、方法说明、结果展示与说明、可视化结果、如何查看结果、后续分析建议。
+
+适配已有项目时要把“原项目输出了什么”转化成用户能看懂的结果：
+
+- 主要输出包含 `.pdb`、`.cif/.mmcif`、`.sdf` 结构文件时，必须用 `molstar` 代码块展示。
+- 多个候选结构、同一体系多个构象或蛋白-配体组合需要同空间对比时，写在同一个 `molstar` 块中。
+- 输出包含 `.png`、`.jpg/.jpeg`、`.svg`、`.webp` 图片时，必须在报告中用 Markdown 图片语法展示，并解释图片含义。
+- 输出只有 CSV/JSON/TSV/XVG 等数据但有可视化需求时，应先用 matplotlib 生成图片，再嵌入报告。
+- 不要在报告中铺开 stdout/stderr、Traceback 或完整命令日志；这些内容写入日志文件。
+
+结构渲染示例：
+
+````markdown
+```molstar
+./1.pdb
+./2.pdb
+./candidate.sdf
+```
+````
+
+图片渲染示例：
+
+```markdown
+![亲和力热图](./affinity_heatmap.png)
+```
+
+### 10. configure 与详情页必须同步维护
+
+- 每次修改 Kit 都必须更新 `config/configure.json` 的 `version`，并同步检查 `Makefile` 中的 `VERSION`。
+- `config/configure.json` 的 `description` 要用户友好，尽可能说明工具能力、输入和输出，但最高不能超过 400 个字符。
+- 必须同时维护 `config/long_description.md` 和 `config/long_description_en.md`。
+- 详情页固定包含：`概述/Overview`、`功能/Features`、`输入/Inputs`、`输出/Outputs`、`注意事项/Notes`、`参考文献/References`。
+- “输入”必须用表格展示，列为：参数、类型、必填、说明；英文版对应为 Parameter、Type、Required、Description。
+
+### 11. 每次修改完成必须打包
+
+适配或修改完成后，必须重新生成新版 zip 包。交付给用户的应是更新后的压缩包，而不是只说明修改了哪些文件。
 
 ## 推荐工作流
 
@@ -286,6 +340,7 @@ python scripts/porting_analyzer.py /path/to/project --json-out /tmp/porting_anal
 config/configure.json
 config/input.json
 config/long_description.md
+config/long_description_en.md
 demos/demos.json
 <入口文件>.py
 Makefile
@@ -305,10 +360,15 @@ Makefile
 - `@tool_io(outputs)` key 与 `return` key 是否一致。
 - `input.json fields[].name` 与 `kwargs['args']` key 是否一致。
 - 所有输出是否写入当前工作目录。
-- 是否生成中文 `report.md`。
+- 是否生成中文 `report.md`，且包含运行概览、方法说明、结果展示与说明、可视化结果、如何查看结果、后续分析建议。
 - 是否没有硬编码本机绝对路径。
 - 是否没有把无关参数塞进 `input.json`。
 - 是否存在 `demos/demos.json`，且 Demo 的 `value` 与 `input.json` 字段一致、引用文件真实存在。
+- 如果源项目来自 GitHub/开源仓库，是否已尽可能把 README、examples、tests、tutorials、notebooks 中的官方案例迁移为 Kit Demo，并覆盖主要运行模式。
+- `config/configure.json` 版本号是否已更新，description 是否清楚且不超过 400 个字符。
+- `config/long_description.md` 和 `config/long_description_en.md` 是否都已维护。
+- 如果输出包含结构文件/图片/可绘图数据，`report.md` 是否已直接展示。
+- 是否已重新打包生成新版 zip。
 
 ## 用户常见说法与行为
 
@@ -319,7 +379,8 @@ Makefile
 | “SIF 用 xxx，CPU 4，GPU 1” | 直接使用用户配置继续改造。 |
 | “先随便写一个 example” | 不允许。SIF 不能写 example/TODO/待定。 |
 | “入口就用 main.py” | 仍需检查项目真实入口；入口文件名不固定。 |
-| “不用 report.md” | 平台 Kit 仍必须生成中文 report.md。 |
+| “不用 report.md” | 平台 Kit 仍必须生成中文 report.md，但报告不展示运行日志全文。 |
+| “改好了给我 zip” | 修改后必须更新版本并重新打包交付。 |
 
 ## 资源
 
@@ -332,4 +393,5 @@ Makefile
 - Demo 辅助脚本：`scripts/demo_cli.py`
 - Demo 模板目录：`assets/templates/demos/`
 - 适配入口模板：`assets/templates/runner_adapter_template.py`
+- 详情页模板：`assets/templates/long_description.template.md`、`assets/templates/long_description_en.template.md`
 - 配置询问模板：`assets/templates/config_request_template.md`

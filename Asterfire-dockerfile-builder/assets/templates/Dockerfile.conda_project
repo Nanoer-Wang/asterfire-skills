@@ -1,5 +1,5 @@
 # Asterfire Kit Dockerfile template: Conda + local project
-FROM registry.cn-hangzhou.aliyuncs.com/sidereus-ai/python:3.12.12-slim
+FROM m.daocloud.io/docker.io/python:3.12.12-slim
 
 RUN rm -f /etc/apt/sources.list.d/*.list /etc/apt/sources.list \
     && echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian trixie main" > /etc/apt/sources.list \

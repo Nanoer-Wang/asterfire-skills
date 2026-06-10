@@ -321,59 +321,100 @@ return {
 
 ## `report.md` 规则
 
-每次 Kit 运行都必须在当前工作目录生成 `report.md`。报告面向用户、前端和排障人员，不只是日志转储。
+每次 Kit 运行都必须在当前工作目录生成 `report.md`。报告面向平台用户，不是日志转储；它的目标是让用户快速知道任务做了什么、结果在哪里、主要结果如何理解，以及下一步还能怎么分析。
 
 必须包含：
 
-- 运行状态：成功、失败或部分成功。
-- 输入参数：展示关键输入，敏感值可脱敏。
-- 输出产物：列出返回的文件和路径。
-- 文件是否存在：对每个输出执行存在性检查。
-- 警告和假设：例如缺省参数、跳过步骤、外部程序版本假设。
+- 运行概览：成功、失败或部分成功；任务名称、版本、关键输入摘要。
+- 方法说明：说明本次调用的核心方法、模型或外部程序，以及关键参数含义。
+- 结果展示与说明：直接展示重要结果，解释数值、表格或结构结果代表什么。
+- 可视化结果：结构文件、图片或由数据生成的图必须嵌入报告。
+- 如何查看结果：说明主要输出文件在哪里、哪些文件最值得优先打开、日志文件在哪里。
+- 后续分析建议：给用户 2-5 条可执行建议，例如进一步筛选、结构检查、参数复核或下游分析。
+
+禁止：
+
+- 不要在 `report.md` 中直接展示 stdout/stderr 全文、长命令日志、Traceback 堆栈或大段调试输出。
+- 不要把 `report.md` 写成纯文件清单；主要结果必须有解释。
+- 不要只说“请下载结果查看”，重要结果应在报告中直接可见。
 
 推荐结构：
 
 ```markdown
 # 运行报告
 
-## 运行状态
+## 运行概览
 
-成功
-
-## 输入参数
-
-| 参数 | 值 |
+| 项目 | 内容 |
 | --- | --- |
-| input_pdb | input.pdb |
+| 运行状态 | 成功 |
+| Kit 版本 | 1.0.1 |
+| 主要输出 | result.csv / best_structure.pdb |
 
-## 输出产物
+## 方法说明
 
-| 输出 | 路径 | 是否存在 |
+本次运行使用……方法处理输入文件。关键参数含义如下：……
+
+## 结果展示与说明
+
+| 指标 | 数值 | 说明 |
 | --- | --- | --- |
-| report | report.md | 是 |
+| score | -8.6 | 数值越低通常表示…… |
 
-## 警告和假设
+## 可视化结果
 
-- 未发现明显格式错误。
+```molstar
+./best_structure.pdb
 ```
 
-必要时可加入 Markdown 表格、Mermaid、KaTeX 或 molstar 结构渲染块。报告中的路径优先使用当前工作目录相对路径。报告内容用中文。
+![结果图](./score_distribution.png)
+
+## 如何查看结果
+
+主要结果文件为 `result.csv`；结构文件可在上方交互式窗口查看，也可下载 `best_structure.pdb`。
+详细运行日志保存在 `run.log`，用于排错，不在本报告中展开。
+
+## 后续分析建议
+
+- 建议优先检查排名靠前的候选结构。
+- 建议结合原始输入和关键参数复核结果合理性。
+```
+
+报告中的路径优先使用当前工作目录相对路径。报告内容用中文。
 
 ## `report.md` 渲染规范
 
-Kit 生成 `report.md` 时，必须根据输出文件类型使用对应的平台渲染方式：
+Kit 生成 `report.md` 时，必须根据输出文件类型使用对应的平台渲染方式。不要再把“是否渲染结构/图片”作为前置确认问题；只要输出中存在可展示结果，就默认展示。
 
 ### 结构文件 → 使用 molstar 代码块（交互式 3D 展示）
 
-支持格式：`.pdb`, `.gro`, `.cif`, `.mmcif`, `.pdbqt`
+强制覆盖格式：`.pdb`, `.cif`, `.mmcif`, `.sdf`。
+可按平台能力扩展：`.mol2`, `.pdbqt`, `.gro`。
 
-写法：
+单个结构文件写法：
 
 ````markdown
 ```molstar
 ./output_structure.pdb
 ```
 ````
+
+多个结构文件需要在同一个空间中对比时，写在同一个 `molstar` 代码块中：
+
+````markdown
+```molstar
+./1.pdb
+./2.pdb
+./candidate.sdf
+```
+````
+
+要求：
+
+- 只要主要输出结果中包含结构文件，就必须在 `report.md` 中出现 `molstar` 代码块。
+- 同一体系的多个构象、多个候选或蛋白-配体组合，需要同空间对比时放在同一个块中。
+- 结构文件路径使用相对路径，优先写 `./filename.pdb`。
+- 在结构块前后用文字说明结构代表什么，例如“排名第一的候选构象”“优化后的复合物结构”。
 
 ### 轨迹文件 → 使用 mdtraj 代码块（交互式轨迹回放）
 
@@ -389,9 +430,13 @@ Kit 生成 `report.md` 时，必须根据输出文件类型使用对应的平台
 ```
 ````
 
-### 数据图表 → matplotlib 渲染为 PNG 后用 markdown 图片嵌入
+### 数据图表和图片 → 嵌入 Markdown 图片
 
-适用场景：`.xvg` 数据画曲线图、`.xpm` 解析后画自由能图、各类分析结果图表。
+适用场景：
+
+- 工具已经生成的 `.png`, `.jpg`, `.jpeg`, `.svg`, `.webp` 图片。
+- `.csv`, `.tsv`, `.json`, `.xvg`, `.xpm` 等数据需要图形化解释。
+- 分数分布、Top N 排名、RMSD/RMSF/Rg、亲和力热图、置信度曲线、分类统计等用户需要直观看到的结果。
 
 写法：
 
@@ -399,22 +444,23 @@ Kit 生成 `report.md` 时，必须根据输出文件类型使用对应的平台
 ![图表描述](./plot.png)
 ```
 
-要求：在 Kit 主函数中用 matplotlib 生成 PNG，`report.md` 中用相对路径引用。
+要求：
+
+- 工具已有图片输出时，必须在报告中展示。
+- 只有数据文件但有可视化价值时，必须在 Kit 主函数中用 matplotlib 生成 PNG，必要时同时输出 SVG。
+- 图片下方要解释这张图的含义，而不是只给图片链接。
 
 ### 统计表格 → 标准 markdown 表格
 
-适用场景：汇总数据、参数回显、关键指标对比。
+适用场景：汇总数据、参数回显、关键指标对比、Top N 结果列表。
 
-直接在 `report.md` 中用 markdown 表格语法。
+直接在 `report.md` 中用 markdown 表格语法。表格应尽量展示关键结果，不要把超大数据表完整塞进报告；完整数据应保存为 CSV/JSON 文件。
 
-### 渲染方式确认流程
+### 日志文件 → 保存为文件，不在报告中展开
 
-在开发 Kit 时，如果 Kit 的输出中包含可视化文件（结构文件、轨迹文件、数据图表等），必须：
+命令输出、错误输出、Traceback、外部程序日志应写入 `run.log`、`stdout.log`、`stderr.log` 或工具原生日志文件。
 
-1. **先询问用户**希望在 `report.md` 中使用什么样的渲染方式。
-2. **提供上述默认方案**作为推荐选项展示给用户。
-3. 如果用户不答复或明确同意，则按照上述默认方案生成 `report.md`。
-4. 如果用户提出不同需求，则按照用户指定的渲染方式生成。
+`report.md` 可以在“如何查看结果”中用一句话说明日志文件位置，但不要直接展示日志全文。
 
 ## 文件路径规则
 
@@ -469,7 +515,8 @@ my-kit/
 ├── config/
 │   ├── configure.json
 │   ├── input.json
-│   └── long_description.md
+│   ├── long_description.md
+│   └── long_description_en.md
 ├── demos/
 │   ├── demos.json
 │   ├── sample.csv
@@ -550,7 +597,7 @@ python scripts/demo_cli.py validate --input config/input.json --demos demos/demo
 
 ## 打包规则
 
-`configure.json` 必须包含：
+`configure.json` 必须包含，并且每次修改 Kit 后都要同步更新版本号：
 
 ```json
 {
@@ -567,18 +614,29 @@ python scripts/demo_cli.py validate --input config/input.json --demos demos/demo
 
 `type` 固定为 `"kit"`。
 
+额外要求：
+
+- 每次修改 Kit，必须更新 `version`，并同步检查 `Makefile` 里的 `VERSION`。
+- `description` 要尽可能详细且用户友好，说明工具能做什么、输入什么、输出什么，但最高不能超过 400 个字符。
+- `config/long_description.md` 与 `config/long_description_en.md` 必须同时维护。
+- 详情页固定结构：`概述`、`功能`、`输入`、`输出`、`注意事项`、`参考文献`。
+- “输入”必须使用表格，列名为：参数、类型、必填、说明。
+- “输出”要解释主要结果是什么、怎么看、适合用于什么后续分析。
+
 完成后优先运行：
 
 ```bash
 python -m py_compile <入口文件>.py
 python -m json.tool config/input.json
 python -m json.tool config/configure.json
+test -f config/long_description.md
+test -f config/long_description_en.md
 python -m json.tool demos/demos.json
 python scripts/demo_cli.py validate --input config/input.json --demos demos/demos.json
 make build
 ```
 
-如果 `adam-cli`、`make` 或平台依赖不可用，必须在交付说明中写明无法运行的原因。
+如果 `adam-cli`、`make` 或平台依赖不可用，必须在交付说明中写明无法运行的原因。无论是否能运行 `make build`，只要修改完成并准备交付，就必须重新打包生成新版 zip。
 
 ## Workflow 与 scatter/gather
 
@@ -604,6 +662,7 @@ scatter/gather 场景：
 - [ ] 存在 `config/configure.json`
 - [ ] 存在 `config/input.json`
 - [ ] 存在 `config/long_description.md`
+- [ ] 存在 `config/long_description_en.md`
 - [ ] 存在 `demos/demos.json`，并且 Demo 引用的示例文件真实存在
 - [ ] 存在包含 `class runner(Tool)` 的 Python 入口文件
 - [ ] 若没有 `Makefile`，已提醒并创建标准模板
@@ -625,8 +684,11 @@ Python：
 - [ ] 输入文件存在性检查完整
 - [ ] 输出写入 `Path.cwd()` 或 `os.getcwd()`
 - [ ] 返回当前工作目录相对路径
-- [ ] 生成中文 `report.md`
-- [ ] 打印 incoming args、cwd、关键命令、stdout/stderr、输出文件存在性
+- [ ] 生成中文 `report.md`，且包含运行概览、方法说明、结果展示与说明、可视化结果、如何查看结果、后续分析建议
+- [ ] 报告中没有直接展示 stdout/stderr 全文或大段运行日志
+- [ ] 若主要输出包含 `.pdb/.cif/.sdf`，报告中已有 molstar 块
+- [ ] 若输出包含图片或可绘图数据，报告中已有图片展示或 matplotlib 生成图
+- [ ] 打印 incoming args、cwd、关键命令、返回码、输出文件存在性，并把详细日志保存为文件
 - [ ] 没有硬编码本机绝对路径
 
 契约：
@@ -648,3 +710,5 @@ Python：
 - [ ] `python scripts/demo_cli.py validate --input config/input.json --demos demos/demos.json` 校验通过
 - [ ] 能运行时执行 `make build`
 - [ ] 不能运行时说明原因
+
+- [ ] 每次修改后已更新 `config/configure.json` 版本号，并重新打包生成新版 zip。

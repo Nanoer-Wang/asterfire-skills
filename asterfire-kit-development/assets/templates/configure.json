@@ -3,7 +3,7 @@
   "display_name": "示例 Kit",
   "version": "1.0.0",
   "visible": true,
-  "description": "一个符合 Asterfire 平台规范的最小 Kit 示例。",
+  "description": "用于演示 Asterfire Kit 的标准开发结构：上传输入文件后执行核心流程，生成主要结果、专业 report.md 和 run.log。报告会直接展示关键结果，并在存在结构或图片输出时自动嵌入可视化内容。",
   "type": "kit",
   "tags": [
     "python",

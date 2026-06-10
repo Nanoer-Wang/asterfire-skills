@@ -331,6 +331,172 @@
       },
       "updated_at": "2026-05-12",
       "notes": ""
+    },
+    {
+      "sif": "adcnet:1.0.0",
+      "owner": "王铭",
+      "purpose": "ADCNet ADC 属性分类推理",
+      "environment": [
+        "Python 3.7",
+        "TensorFlow 2.3.4"
+      ],
+      "contains": [
+        "ADCNet",
+        "ADC_9.h5"
+      ],
+      "tags": [
+        "adc",
+        "inference"
+      ],
+      "notes": "由 ADCNet/Dockerfile 云端构建后可用。",
+      "default_resources": {
+        "cpu": 4,
+        "gpu": 0,
+        "network": false
+      },
+      "updated_at": "2026-05-26"
+    },
+    {
+      "sif": "anewomni:1.0.0",
+      "owner": "王铭",
+      "purpose": "AnewOmni 全原子小分子候选生成",
+      "environment": [
+        "Python 3.10",
+        "PyTorch CUDA 12.4"
+      ],
+      "contains": [
+        "AnewOmni",
+        "model.ckpt"
+      ],
+      "tags": [
+        "molecule-generation",
+        "gpu"
+      ],
+      "notes": "由 AnewOmni/Dockerfile 云端构建后可用。",
+      "default_resources": {
+        "cpu": 8,
+        "gpu": 1,
+        "network": false
+      },
+      "updated_at": "2026-05-26"
+    },
+    {
+      "sif": "immuscope:1.0.0",
+      "owner": "王铭",
+      "purpose": "ImmuScope 官方免疫预测基准评估",
+      "environment": [
+        "Python 3.9",
+        "PyTorch 1.12.1"
+      ],
+      "contains": [
+        "ImmuScope",
+        "released data and weights"
+      ],
+      "tags": [
+        "immunogenicity",
+        "benchmark"
+      ],
+      "notes": "由 ImmuScope/Dockerfile 云端构建后可用。",
+      "default_resources": {
+        "cpu": 4,
+        "gpu": 0,
+        "network": false
+      },
+      "updated_at": "2026-05-26"
+    },
+    {
+      "sif": "thermompnn:1.0.0",
+      "owner": "王铭",
+      "purpose": "ThermoMPNN 蛋白稳定性突变扫描",
+      "environment": [
+        "Python 3.10",
+        "PyTorch CUDA"
+      ],
+      "contains": [
+        "ThermoMPNN",
+        "thermoMPNN_default.pt"
+      ],
+      "tags": [
+        "protein-stability",
+        "gpu"
+      ],
+      "notes": "由 ThermoMPNN/Dockerfile 云端构建后可用。",
+      "default_resources": {
+        "cpu": 4,
+        "gpu": 1,
+        "network": false
+      },
+      "updated_at": "2026-05-26"
+    },
+    {
+      "sif": "venusrem:1.0.0",
+      "owner": "王铭",
+      "purpose": "VenusREM 检索增强突变效应评分",
+      "environment": [
+        "Python 3.9",
+        "PyTorch 2.5.1 CUDA 12.1"
+      ],
+      "contains": [
+        "VenusREM",
+        "AI4Protein/ProSST-2048"
+      ],
+      "tags": [
+        "mutation-effect",
+        "gpu"
+      ],
+      "notes": "由 VenusREM/Dockerfile 云端构建后可用。",
+      "default_resources": {
+        "cpu": 8,
+        "gpu": 1,
+        "network": false
+      },
+      "updated_at": "2026-05-26"
+    },
+    {
+      "sif": "apbs:1.0.0",
+      "owner": "王铭",
+      "purpose": "APBS 分子静电势计算",
+      "environment": [
+        "Ubuntu 22.04"
+      ],
+      "contains": [
+        "apbs"
+      ],
+      "tags": [
+        "electrostatics",
+        "simulation"
+      ],
+      "notes": "由 apbs/Dockerfile 云端构建后可用。",
+      "default_resources": {
+        "cpu": 4,
+        "gpu": 0,
+        "network": false
+      },
+      "updated_at": "2026-05-26"
+    },
+    {
+      "sif": "targetdiff:1.0.0",
+      "owner": "王铭",
+      "purpose": "TargetDiff 蛋白配体亲和力预测",
+      "environment": [
+        "Python 3.8",
+        "PyTorch 1.13.1 CUDA 11.6"
+      ],
+      "contains": [
+        "targetdiff",
+        "egnn_pdbbind_v2016.pt"
+      ],
+      "tags": [
+        "affinity",
+        "gpu"
+      ],
+      "notes": "由 targetdiff/Dockerfile 云端构建后可用。",
+      "default_resources": {
+        "cpu": 4,
+        "gpu": 1,
+        "network": false
+      },
+      "updated_at": "2026-05-26"
     }
   ]
 }

@@ -3,7 +3,7 @@
   "display_name": "{{DISPLAY_NAME}}",
   "version": "1.0.0",
   "visible": true,
-  "description": "{{中文描述：说明该 Kit 从普通项目适配而来，提供什么能力。}}",
+  "description": "{{中文描述：用不超过400个字符说明该 Kit 能做什么、需要用户上传或填写什么、会生成哪些主要结果。}}",
   "type": "kit",
   "tags": [
     "python",

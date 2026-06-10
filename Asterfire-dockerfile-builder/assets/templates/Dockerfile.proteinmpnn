@@ -1,5 +1,5 @@
 # Asterfire Kit Dockerfile template: ProteinMPNN
-FROM registry.cn-hangzhou.aliyuncs.com/sidereus-ai/python:3.12.12-slim
+FROM m.daocloud.io/docker.io/python:3.12.12-slim
 
 ENV PATH=/app/bin:$PATH
 ENV PYTHONPATH=/app:$PYTHONPATH
@@ -21,7 +21,10 @@ RUN python --version \
     && which python \
     && ls -lah /opt/ProteinMPNN \
     && test -f /opt/ProteinMPNN/protein_mpnn_run.py \
-    && test -d /opt/ProteinMPNN/helper_scripts
+    && test -d /opt/ProteinMPNN/helper_scripts \
+    && test -d /opt/ProteinMPNN/vanilla_model_weights \
+    && test -d /opt/ProteinMPNN/soluble_model_weights \
+    && ls -lh /opt/ProteinMPNN/vanilla_model_weights
 
 WORKDIR /app
 CMD ["bash"]

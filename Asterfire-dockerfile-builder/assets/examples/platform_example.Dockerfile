@@ -1,5 +1,5 @@
 # 指定基础镜像
-FROM registry.cn-hangzhou.aliyuncs.com/sidereus-ai/python:3.12.12-slim
+FROM m.daocloud.io/docker.io/python:3.12.12-slim
 
 # 设置环境变量
 ENV PATH=/app/bin:$PATH

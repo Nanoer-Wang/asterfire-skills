@@ -17,6 +17,29 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
+DAO_DOCKER_HUB_PREFIX = "m.daocloud.io/docker.io/"
+DEFAULT_BASE_IMAGE = DAO_DOCKER_HUB_PREFIX + "python:3.12.12-slim"
+
+
+def normalize_base_image(image: str) -> str:
+    """Prefer DaoCloud acceleration for Docker Hub images.
+
+    Bare Docker Hub names such as python:3.12-slim, nvidia/cuda:...,
+    pytorch/pytorch:..., continuumio/miniconda3:... are rewritten to
+    m.daocloud.io/docker.io/<name>. Already-prefixed images and private
+    registry images are left unchanged.
+    """
+    image = (image or DEFAULT_BASE_IMAGE).strip()
+    if image.startswith(DAO_DOCKER_HUB_PREFIX):
+        return image
+    if image.startswith("docker.io/"):
+        return DAO_DOCKER_HUB_PREFIX + image[len("docker.io/"):]
+    first = image.split("/", 1)[0]
+    looks_like_private_registry = "." in first or ":" in first or first == "localhost"
+    if looks_like_private_registry:
+        return image
+    return DAO_DOCKER_HUB_PREFIX + image
+
 
 def _read_json(path: Path) -> Dict[str, Any]:
     with path.open("r", encoding="utf-8") as f:
@@ -28,10 +51,7 @@ def _quote_list(items: List[str]) -> str:
 
 
 def generate_dockerfile(cfg: Dict[str, Any]) -> str:
-    base_image = cfg.get(
-        "base_image",
-        "registry.cn-hangzhou.aliyuncs.com/sidereus-ai/python:3.12.12-slim",
-    )
+    base_image = normalize_base_image(cfg.get("base_image", DEFAULT_BASE_IMAGE))
     workdir = cfg.get("workdir", "/app")
     dependency_mode = cfg.get("dependency_mode", "pip").lower()
     apt_packages = cfg.get(
@@ -43,6 +63,11 @@ def generate_dockerfile(cfg: Dict[str, Any]) -> str:
     copies = cfg.get("copies", [])
     env = cfg.get("env", {})
     sanity_checks = cfg.get("sanity_checks", [])
+    weight_downloads = cfg.get("weight_downloads", [])
+    required_model_files = cfg.get("required_model_files", [])
+
+    if weight_downloads and "curl" not in apt_packages:
+        apt_packages = list(apt_packages) + ["curl"]
 
     lines: List[str] = []
     lines.append(f"FROM {base_image}")
@@ -99,12 +124,27 @@ def generate_dockerfile(cfg: Dict[str, Any]) -> str:
     if copies:
         lines.append("")
 
+    for item in weight_downloads:
+        url = item["url"]
+        dst = item["dst"]
+        dst_parent = str(Path(dst).parent)
+        lines.extend([
+            f"RUN mkdir -p {dst_parent} \\",
+            f"    && curl -L --retry 3 -o {dst} {url!r} \\",
+            f"    && test -s {dst}",
+            "",
+        ])
+
     for key, value in env.items():
         lines.append(f"ENV {key}={value}")
     if env:
         lines.append("")
 
     checks = ["python --version", "which python"] + sanity_checks
+    for fp in required_model_files:
+        checks.append(f"test -s {fp}")
+    for item in weight_downloads:
+        checks.append(f"test -s {item['dst']}")
     if copies:
         for item in copies:
             dst = item["dst"]
@@ -219,7 +259,9 @@ def generate_layout(cfg: Dict[str, Any]) -> str:
 
 - `/app`：Dockerfile 中的构建工作目录，适合放 requirements、environment.yml、轻量配置文件和轻量脚本。
 - `/opt/<ProjectName>`：镜像内固定项目路径，适合放源码、模型权重、数据库。Kit 主函数读取这些资源时应使用绝对路径。
+- 深度学习项目应在镜像构建期确认权重完整，外部权重可通过 `weight_downloads` 下载，并用 `required_model_files` 自检。
 - `/workspace`：平台运行时挂载目录。用户上传文件、中间文件、输出 zip、`report.md` 应写到这里，也就是 Python 中的 `Path.cwd()`。
+- 小型 demo 输入文件应放在 Kit 的 `demos/` 目录，不要 COPY 进镜像。
 - 不要在 runner.py 中把 `Path.cwd()` 当成镜像内项目根目录。
 """
 

@@ -36,3 +36,9 @@ python scripts/patch_proteinmpnn_runner.py \
   --image-root /opt/ProteinMPNN \
   --output ProteinMPNN.path_fixed.py
 ```
+
+
+## 更新规则
+
+- 校准路径时同时检查深度学习模型权重完整性，尤其是 GitHub 之外下载的 checkpoint。
+- 小型 demo 输入文件放在 `demos/`，不要作为镜像内置资源处理。

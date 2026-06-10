@@ -1,6 +1,7 @@
 ---
 name: asterfire-image-rules
-description: 校准 Asterfire 平台 Kit 主入口代码中对镜像内置项目、权重、脚本和资源文件的路径引用。优先读取 Asterfire-dockerfile-builder 生成的镜像目录结构说明；若没有目录说明，再解析 Dockerfile 中 COPY/ENV/WORKDIR 固化到镜像里的目录。凡涉及运行时 workspace 与镜像绝对路径区分、.pt/.pth/.ckpt 权重路径、helper_scripts/protein_mpnn_run.py 等镜像内程序路径匹配、将本地项目路径映射为容器内绝对路径，都使用本 Skill。
+version: 1.0.1
+description: 校准 Asterfire 平台 Kit 主入口代码中对镜像内置项目、模型权重、脚本和资源文件的路径引用，并检查深度学习 Kit 的权重是否完整固化进镜像。优先读取 Asterfire-dockerfile-builder 生成的镜像目录结构说明；若没有目录说明，再解析 Dockerfile 中 COPY/ENV/WORKDIR 和权重下载/自检逻辑。
 ---
 
 # Asterfire 镜像内资源路径校准 Skill
@@ -17,6 +18,7 @@ description: 校准 Asterfire 平台 Kit 主入口代码中对镜像内置项目
 - 用户明确说：代码里 `.pt`、`.py`、`helper_scripts`、模型目录、项目目录需要从镜像路径读取。
 - 用户希望优先根据镜像目录结构说明自动确定镜像内路径；如果没有目录说明，再从 Dockerfile 自动推断；仍推断不了时，再让用户指定。
 - 用户希望根据本地项目目录结构，拼出容器内绝对路径。
+- 用户明确要求检查深度学习项目的模型权重是否完整，或项目运行依赖 `.pt`、`.pth`、`.ckpt`、`.safetensors`、Hugging Face/Zenodo/Google Drive 等外部权重。
 
 ## 核心原则
 
@@ -176,7 +178,40 @@ ckpt_path = model_home / "rf3_latest.pt"
 
 4. 必须在运行前检查关键权重是否存在；不存在时抛出清晰错误。
 
-### 6. 命令构造推荐写法
+### 7. 深度学习项目的模型权重完整性校准
+
+深度学习 Kit 不能只校准路径，还必须校准“权重是否真的在镜像里”。处理规则：
+
+1. 根据 GitHub README、docs、release、download.sh、setup.py、配置文件和示例命令，找出项目运行需要的模型权重、checkpoint、tokenizer、数据库或预训练参数。
+2. 检查 Dockerfile 或镜像目录说明中是否存在对应 `COPY`、`curl/wget/huggingface-cli download`、`git lfs pull`、`RUN test -f/test -s/test -d` 逻辑。
+3. 如果代码中出现 `.pt`、`.pth`、`.ckpt`、`.safetensors`、`model_name`、`checkpoint`、`weights`、`pretrained`、`model_dir` 等路径或参数，必须映射到镜像内绝对路径，并在 runner 运行前检查存在性。
+4. 如果 GitHub 仓库没有真实权重，而 README 要求从 Hugging Face、Zenodo、Google Drive、release assets 或作者网盘下载，必须提醒用户 Dockerfile 需要补充下载逻辑；否则 Kit 构建成功也会运行失败。
+5. 如果 Kit 参数会切换不同模型分支，例如 `vanilla/soluble/ca_only`、`model_name`、`mode`、`checkpoint`，要检查这些分支所需权重是否都已经固化。
+6. 小型 demo 输入文件不属于镜像内资源，不要为了 demo 把小 PDB/CSV/JSON/SDF COPY 到镜像；应放在 Kit 的 `demos/` 目录，并在 `demos/demos.json` 中使用相对文件名。
+
+runner 中推荐加入：
+
+```python
+required_model_files = [
+    Path(os.environ.get("MODEL_DIR", "/opt/Project/weights")) / "model.pt",
+]
+for fp in required_model_files:
+    if not fp.exists() or fp.stat().st_size == 0:
+        raise FileNotFoundError(f"镜像内模型权重不存在或为空: {fp}")
+```
+
+如果只是 demo 输入文件，应保持：
+
+```text
+demos/
+├── demos.json
+├── sample.pdb
+└── sample.json
+```
+
+并由平台 demo 配置传入，不要在 Dockerfile 中写 `COPY sample.pdb /opt/...`。
+
+### 8. 命令构造推荐写法
 
 推荐写法 A：设置 `cwd` 到镜像内项目根目录，命令内部使用项目相对路径。
 
@@ -236,7 +271,7 @@ result = execCmd(full_cmd, cwd=str(Path.cwd()), timeout=3600)
 
 - `Path.cwd()`、`cwd / "项目名"`、`os.getcwd()`。
 - `python xxx.py`、`python helper_scripts/xxx.py`、`runCmd(...)`、`execCmd(...)`。
-- `.pt`、`.pth`、`.ckpt`、`.json`、`.yaml` 等资源文件。
+- `.pt`、`.pth`、`.ckpt`、`.safetensors`、`.json`、`.yaml` 等资源文件。
 - `cwd=str(...)` 是否指向了工作目录而不是镜像项目目录。
 - 是否错误地尝试 `conda activate`。Asterfire 已通过 SIF 固化环境时通常不需要激活 conda。
 
@@ -363,6 +398,7 @@ demos/
 - `description`：Demo 说明。
 - `value`：与 `config/input.json` 的字段 key 对齐。
 - Demo 中引用的文件必须放在 `demos/` 目录下，用相对文件名引用，例如 `"avatar": "demo.jpg"`。
+- 体积较小的 demo 输入文件应放在 `demos/` 中，不要随着镜像打包；运行必需的大模型权重才应固化进镜像。
 - 不要在 `demos.json` 中写本地绝对路径。
 
 ## 可用辅助脚本

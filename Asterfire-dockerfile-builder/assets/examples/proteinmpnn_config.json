@@ -2,11 +2,16 @@
   "kit_name": "proteinmpnn",
   "local_image_name": "proteinmpnn-1",
   "image_version": "1.0.0",
-  "base_image": "registry.cn-hangzhou.aliyuncs.com/sidereus-ai/python:3.12.12-slim",
+  "base_image": "m.daocloud.io/docker.io/python:3.12.12-slim",
   "author": "Your Name",
   "description": "Asterfire Kit image with local ProteinMPNN project",
   "dependency_mode": "pip",
-  "apt_packages": ["python3", "python3-pip", "ca-certificates", "git"],
+  "apt_packages": [
+    "python3",
+    "python3-pip",
+    "ca-certificates",
+    "git"
+  ],
   "requirements_file": "requirements.txt",
   "copies": [
     {
@@ -20,10 +25,13 @@
   },
   "sanity_checks": [
     "test -f /opt/ProteinMPNN/protein_mpnn_run.py",
-    "test -d /opt/ProteinMPNN/helper_scripts"
+    "test -d /opt/ProteinMPNN/helper_scripts",
+    "test -d /opt/ProteinMPNN/vanilla_model_weights",
+    "test -d /opt/ProteinMPNN/soluble_model_weights"
   ],
   "workdir": "/app",
   "registry": "crpi-3v2rl4y9u3xihgef.cn-hangzhou.personal.cr.aliyuncs.com",
   "registry_username": "xxxxxxxxxxx",
-  "namespace_repo": "mlfold/proteinmpnn-1"
+  "namespace_repo": "mlfold/proteinmpnn-1",
+  "required_model_files": []
 }

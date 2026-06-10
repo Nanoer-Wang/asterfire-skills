@@ -1,7 +1,7 @@
 ---
 name: asterfire-dockerfile-builder
-version: 1.0.0
-description: 为 Asterfire 平台 Kit 开发生成符合平台运行逻辑和用户项目需求的 Dockerfile、docker build / tag / push 命令，以及镜像内文件目录结构说明。凡用户需要把本地项目、模型权重、脚本、requirements/environment.yml 固化进镜像，或需要解释 /app、/opt、/workspace 路径关系、阿里云镜像仓库上传流程、SIF 与镜像版本命名规则，都使用本 Skill。
+version: 1.0.1
+description: 为 Asterfire 平台 Kit 开发生成符合平台运行逻辑和用户项目需求的 Dockerfile、构建/推送命令、镜像目录说明和模型权重完整性检查方案。基础镜像可按项目自由选择，但 Docker Hub 来源镜像应优先加 m.daocloud.io/docker.io/ 前缀以使用国内加速；深度学习项目必须核对并固化运行所需模型权重。
 ---
 
 # Asterfire Kit Dockerfile 构建 Skill
@@ -67,7 +67,7 @@ Asterfire 平台运行 Kit 时，应区分两类路径：
 | Kit 名称 | 是 | 例如 `proteinmpnn` |
 | 镜像名称 | 是 | 例如 `proteinmpnn-1` |
 | 镜像版本 | 是 | 例如 `1.0.0` |
-| 基础镜像 | 否 | `registry.cn-hangzhou.aliyuncs.com/sidereus-ai/python:3.12.12-slim` |
+| 基础镜像 | 否 | 可按项目自由选择；Docker Hub 来源镜像推荐写成 `m.daocloud.io/docker.io/<image>:<tag>`，例如 `m.daocloud.io/docker.io/python:3.12.12-slim` |
 | 依赖安装方式 | 是 | `pip` 或 `conda` |
 | 本地项目目录 | 否 | 例如 `ProteinMPNN/ProteinMPNN-main` |
 | 镜像内项目目录 | 否 | 推荐 `/opt/<ProjectName>` |
@@ -81,13 +81,25 @@ Asterfire 平台运行 Kit 时，应区分两类路径：
 
 ### 1. 基础镜像
 
-优先使用平台推荐基础镜像：
+基础镜像**不强制**使用某一个固定镜像，应根据项目实际依赖自由选择，例如：
+
+- 纯 Python / pip 项目：`python:3.10-slim`、`python:3.12-slim`。
+- Conda 项目：`continuumio/miniconda3:<tag>`。
+- PyTorch GPU 项目：`pytorch/pytorch:<tag>` 或 `nvidia/cuda:<tag>`。
+- GROMACS / ORCA / CUDA / 特定系统库项目：选择与官方项目要求匹配的 Ubuntu、CUDA、Conda 或专用基础镜像。
+
+但如果基础镜像来自 Docker Hub，Dockerfile 中应优先在镜像名前加国内加速前缀：
 
 ```dockerfile
-FROM registry.cn-hangzhou.aliyuncs.com/sidereus-ai/python:3.12.12-slim
+FROM m.daocloud.io/docker.io/python:3.12.12-slim
+FROM m.daocloud.io/docker.io/continuumio/miniconda3:24.3.0-0
+FROM m.daocloud.io/docker.io/nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
+FROM m.daocloud.io/docker.io/pytorch/pytorch:2.4.1-cuda12.4-cudnn9-runtime
 ```
 
-如果用户项目需要 CUDA、GROMACS、PyTorch GPU、Conda、系统库，应根据用户给出的已有 Dockerfile 或项目需求改为合适基础镜像。
+如果用户明确提供的是私有镜像仓库、阿里云 ACR 镜像或公司内部镜像，不要强行再拼接 DaoCloud 前缀；只在回复中提醒“Docker Hub 镜像建议使用 `m.daocloud.io/docker.io/` 前缀”。
+
+禁止把 `registry.cn-hangzhou.aliyuncs.com/sidereus-ai/python:3.12.12-slim` 当成所有 Kit 的强制基础镜像。该镜像最多只能作为历史示例，不应作为默认规则。
 
 ### 2. 环境变量
 
@@ -173,7 +185,36 @@ RUN python --version \
 RUN test -f /app/modelforge/rf3_latest.pt
 ```
 
-### 7. LABEL 元数据
+### 7. 深度学习项目模型权重完整性规则
+
+凡是深度学习 Kit（例如 ProteinMPNN、RFdiffusion、RoseTTAFold、Boltz、BindCraft、RAPiDock、ThermoMPNN、AlphaFold/RoseTTAFold 类项目），生成 Dockerfile 前必须把“模型权重是否完整”作为必查项，而不是只检查 GitHub 源码。
+
+必须检查以下位置：
+
+1. GitHub README、docs、release、download.sh、setup.sh、environment.yml、示例命令中的 `--checkpoint` / `--weights` / `--model` 路径。
+2. Git LFS 指针文件。如果仓库里只有几十到几百字节的 `.pt` / `.pth` / `.ckpt` / `.safetensors`，通常只是 LFS pointer，不是真实权重。
+3. 上游是否要求去 Hugging Face、Zenodo、Google Drive、Dropbox、Figshare、OSF、作者网盘或论文补充材料下载权重。
+4. Kit 运行参数是否会切换不同模型，例如 `model_name`、`use_soluble_model`、`ca_only`、`mode`、`checkpoint`，这些分支对应的权重也必须覆盖。
+
+处理规则：
+
+- 运行必需的模型权重、数据库、tokenizer、配置文件，应在 Dockerfile 构建期下载或 COPY 到 `/opt/<ProjectName>` 或 `/app/<model_dir>`，并设置 `*_HOME` / `*_MODEL_DIR` 环境变量。
+- Dockerfile 必须加入 `RUN test -f ...` 或 `RUN test -d ... && ls -lh ...` 自检，确保构建时就能发现权重缺失。
+- 如果权重来自外部 URL，优先使用 `curl -L --retry 3` / `wget` / `huggingface-cli download`，必要时加入 checksum 校验；国内环境不可访问的地址要提醒用户准备可访问镜像源或 OSS 备份。
+- 如果权重体积很大，应固化到镜像或稳定挂载目录，不要放到 `demos/`，也不要在运行时临时下载。
+- 体积较小、只用于演示的输入文件（例如小 PDB、小 CSV、小 JSON、小 SDF）不要随着镜像打包；应放到 Kit 的 `demos/` 目录，并在 `demos/demos.json` 中用相对文件名配置。
+
+示例：
+
+```dockerfile
+ENV MODEL_DIR=/opt/ThermoMPNN/weights
+RUN mkdir -p ${MODEL_DIR} \
+    && curl -L --retry 3 -o ${MODEL_DIR}/thermompnn.pt "<WEIGHT_URL>" \
+    && test -s ${MODEL_DIR}/thermompnn.pt \
+    && ls -lh ${MODEL_DIR}
+```
+
+### 8. LABEL 元数据
 
 必须给出清晰的作者、版本、描述：
 
@@ -196,7 +237,8 @@ LABEL Author="Your Name" \
 7. “标记镜像命令”。
 8. “上传镜像命令”。
 9. “镜像内目录结构说明”。
-10. “Kit 主函数中路径使用建议”。
+10. “模型权重/外部资源完整性检查清单”。
+11. “Kit 主函数中路径使用建议”。
 
 ## 标准构建与上传命令模板
 
@@ -272,7 +314,7 @@ class runner(Tool):
 当用户需要把 ProteinMPNN 固化进镜像时，可以参考：
 
 ```dockerfile
-FROM registry.cn-hangzhou.aliyuncs.com/sidereus-ai/python:3.12.12-slim
+FROM m.daocloud.io/docker.io/python:3.12.12-slim
 
 ENV PATH=/app/bin:$PATH
 ENV PYTHONPATH=/app:$PYTHONPATH
@@ -294,7 +336,10 @@ RUN python --version \
     && which python \
     && ls -lah /opt/ProteinMPNN \
     && test -f /opt/ProteinMPNN/protein_mpnn_run.py \
-    && test -d /opt/ProteinMPNN/helper_scripts
+    && test -d /opt/ProteinMPNN/helper_scripts \
+    && test -d /opt/ProteinMPNN/vanilla_model_weights \
+    && test -d /opt/ProteinMPNN/soluble_model_weights \
+    && ls -lh /opt/ProteinMPNN/vanilla_model_weights
 
 WORKDIR /app
 CMD ["bash"]
@@ -481,10 +526,13 @@ COPY ProteinMPNN-main /opt/ProteinMPNN
 
 ### 错误 3：构建成功但运行时报找不到模型权重
 
-在 Dockerfile 加自检：
+常见原因是 GitHub 仓库只包含源码，没有包含真实模型权重；README 可能要求从 Hugging Face、Zenodo、Google Drive、release assets 或作者网盘另行下载。深度学习项目不能只 `git clone` 就认为镜像完整。
+
+在 Dockerfile 加下载或 COPY，并加自检：
 
 ```dockerfile
-RUN test -f /app/modelforge/rf3_latest.pt
+ENV MODEL_DIR=/app/modelforge
+RUN mkdir -p ${MODEL_DIR}     && curl -L --retry 3 -o ${MODEL_DIR}/rf3_latest.pt "<WEIGHT_URL>"     && test -s ${MODEL_DIR}/rf3_latest.pt
 ```
 
 在 runner 中用绝对路径：
@@ -492,6 +540,8 @@ RUN test -f /app/modelforge/rf3_latest.pt
 ```python
 ckpt_path = "/app/modelforge/rf3_latest.pt"
 ```
+
+同时把小型 demo 输入文件放入 `demos/`，不要为了跑 demo 把这些输入文件 COPY 进镜像。
 
 ### 错误 4：忘记清理 apt 缓存导致镜像过大
 
