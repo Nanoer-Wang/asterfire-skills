@@ -183,7 +183,7 @@ python scripts/input_form_cli.py validate config/input.json
   ]
 }
 ```
-
+对应字段的description要用户友好，描述详细，但不能过长，能让客户知道是什么，要填什么，上传什么即可。
 不要加入 `title`、`tags`、`metadata`、`run_date`、`advanced_threshold` 这类与任务无关的字段。
 
 如果确实需要高级参数，才加入可选字段，并给出中文说明。例如严格模式、pH、阈值、分析窗口等。
