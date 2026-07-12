@@ -1,0 +1,4 @@
+interface:
+  display_name: "AsterFire Agent Skill"
+  short_description: "开发、审查、打包和验证 AsterFire ATP Agent Toolbox 工具。"
+  default_prompt: "使用该 Skill 的 SKILL.md 开发、审查、调试、重构、打包或验证 AsterFire Adam Tool Protocol Agent Toolbox，确保 Tool 直接继承、docstring、calltype、hooks、resources、@tool_io、文件交接、config、demos 和 adam-cli build 暴露均符合规则。"
