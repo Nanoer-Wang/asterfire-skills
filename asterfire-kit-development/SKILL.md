@@ -64,9 +64,9 @@ my-kit/
 ```python
 @tool_io(
     outputs={
-        "output_file": TXTFile,
-        "report": MDFile,
-        "success": bool,
+        "output_file": (TXTFile, "输入文件大小与 SHA256 校验值"),
+        "report": (MDFile, "运行概览与结果解读"),
+        "success": (bool, "任务是否执行成功"),
     }
 )
 class runner(Tool):
@@ -112,7 +112,8 @@ input_pdb = args["input_pdb"]
 
 - 需要用到的辅助函数写在 `runner` 类之后，不要在 `runner` 前放业务函数。
 - `config/input.json` 中 `fields[].name` 必须和 Python 中 `kwargs['args']['xxx']` 的 key 完全一致。
-- 必须使用 `@tool_io(outputs={...})` 显式声明输出端口。
+- 必须使用 `@tool_io(outputs={...})` 显式声明输出端口，每项统一写成 `"output_key": (输出类型, "简短中文描述")`，不能只写类型；文件端口使用对应文件类型，非文件端口使用 `bool` 等实际类型。
+- 描述面向 Agent，用一个短语点明输出对象和关键内容；仅在消除歧义时补充来源、用途或单位。避免只写“结果文件”“输出数据”、重复类型或 key，以及操作步骤和冗长背景。例如 `"pka_file": (TXTFile, "PROPKA 预测的残基 pKa 值")`。具体写法见 `references/kit-development-rules.md` 的输出端口规范。
 - `@tool_io(outputs={...})` 的 key 必须和 `call()` 最后 `return dict` 的 key 完全一致。
 - `call()` 必须以 `return { ... }` 结束；即使只返回一个变量，也必须使用字典。
 - 所有输出文件必须写入当前工作目录，也就是 `os.getcwd()` 或 `Path.cwd()`。

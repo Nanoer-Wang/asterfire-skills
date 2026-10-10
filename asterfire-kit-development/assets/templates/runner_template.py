@@ -16,10 +16,10 @@ IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".svg", ".webp"}
 
 @tool_io(
     outputs={
-        "output_file": TXTFile,
-        "report": MDFile,
-        "run_log": TXTFile,
-        "success": bool,
+        "output_file": (TXTFile, "输入文件大小与 SHA256 校验值"),
+        "report": (MDFile, "运行概览与结果解读"),
+        "run_log": (TXTFile, "命令执行日志与异常信息"),
+        "success": (bool, "任务是否执行成功"),
     }
 )
 class runner(Tool):

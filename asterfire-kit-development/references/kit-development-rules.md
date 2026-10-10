@@ -281,14 +281,23 @@ PDB 验证 Kit 的最小表单示例：
 
 `@tool_io(outputs={...})` 是平台输出端口契约，`call()` 的返回字典是运行时真实产物契约。二者 key 必须完全一致。
 
+### 输出类型与描述
+
+每个声明统一使用 `"output_key": (输出类型, "简短中文描述")`，文件和非文件端口都要有非空描述，不使用仅类型的声明。描述帮助 Agent 判断输出内容及其是否适合下游任务：
+
+- 用一个短语说明“输出对象 + 关键内容”，例如 `"pka_file": (TXTFile, "PROPKA 预测的残基 pKa 值")`；来源、用途或单位仅在区分输出或正确使用时补充。
+- 描述以实际产物为准，不承诺文件中不存在的字段或内容；多个相似输出应写明区别，如“筛选前的候选结构”和“筛选后的候选结构”。
+- 避免“结果文件”“输出数据”等空泛词，也不要仅复述 key、文件扩展名或类型；不堆叠背景、算法原理、读取步骤和下游建议，不设机械字数下限。
+- `(类型, 描述)` 仅用于装饰器声明。`return` 仍返回文件路径或实际值，不返回该二元组。自定义 `FileType` 中的格式说明不能代替端口的业务描述。
+
 正确：
 
 ```python
 @tool_io(
     outputs={
-        "output_file": TXTFile,
-        "report": MDFile,
-        "success": bool,
+        "output_file": (TXTFile, "输入文件大小与 SHA256 校验值"),
+        "report": (MDFile, "运行概览与结果解读"),
+        "success": (bool, "任务是否执行成功"),
     }
 )
 class runner(Tool):
@@ -303,7 +312,7 @@ class runner(Tool):
 错误：
 
 ```python
-@tool_io(outputs={"output": TXTFile})
+@tool_io(outputs={"output": (TXTFile, "输入文件大小与 SHA256 校验值")})
 class runner(Tool):
     def call(self, kwargs):
         return {"output_file": "result.txt"}
@@ -698,6 +707,7 @@ Python：
 - [ ] `input.json` 只包含必要字段
 - [ ] `python scripts/input_form_cli.py validate config/input.json` 能通过基础校验
 - [ ] `@tool_io(outputs)` key 与 `return dict` key 完全一致
+- [ ] 每个输出声明使用 `(输出类型, "简短中文描述")`；描述准确说明实际内容、区分相似输出，无空泛或冗余说明
 - [ ] required 字段同时存在于 `formRules.required` 和 `validation.required`
 - [ ] `demos/demos.json` 中每个 Demo 的 `value` 覆盖全部必填字段
 - [ ] Demo 中的文件字段使用 `demos/` 下的相对文件名，且文件存在
