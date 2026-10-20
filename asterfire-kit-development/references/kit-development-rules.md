@@ -3,7 +3,7 @@
 ## 目录
 
 - 入口文件定位规则
-- SIF 指定与注册表
+- SIF 绑定与平台查询
 - `input.json` ↔ `kwargs['args']` 映射关系
 - input.json 表单知识库
 - 最小输入原则
@@ -29,69 +29,14 @@
 推荐命令：
 
 ```bash
-grep -R "class runner *( *Tool *)" -n . --include="*.py"
+rg -n "class\s+runner\s*\(" -g "*.py" .
 ```
 
-## SIF 指定与注册表
+## SIF 绑定与平台查询
 
-每个 Kit 的 `runner` 类必须显式指定 SIF：
+runner 显式声明 DISPLAY_NAME、NETWORK、CPU、GPU 与实际可用的 SIF。名称/版本从目标平台实时查询，流程见 `../../asterfire-platform-devops/references/image-discovery.md`；不维护本地镜像注册表。已有绑定也需核对目标集群的 cluster_build_status、依赖与权重，列表中出现不等于可运行。
 
-```python
-class runner(Tool):
-    DISPLAY_NAME = "Example Kit"
-    NETWORK = False
-    CPU = 2
-    GPU = 0
-    SIF = "asterfire-base:1.0.0"
-```
-
-硬性规则：
-
-- 不指定 SIF 时，不写入口代码，并直接告诉用户，让用户必须选择一个SIF。
-- `SIF` 不能是空字符串、`None`、`TODO`、`待定`、`example` 等占位值。
-- 修改已有 Kit 时，如果 `runner` 中缺失 `SIF`，必须补齐；补齐前必须知道真实镜像。
-- `CPU`、`GPU`、`NETWORK` 应优先参考 `references/sif_registry.json` 中对应 SIF 的默认资源。
-- SIF 用途要与 Kit 功能匹配。例如 PDB 验证工具不能随便使用只包含 GROMACS 的生产镜像，除非该镜像确实包含验证所需环境。
-
-SIF 注册表文件：
-
-```text
-references/sif_registry.json
-```
-
-注册表字段说明：
-
-| 字段 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| `sif` | string | 是 | 镜像名称或平台可识别的 SIF 标识 |
-| `owner` | string | 是 | 负责人或维护团队 |
-| `purpose` | string | 是 | 该镜像主要用途 |
-| `environment` | array | 是 | 语言、库、系统环境等 |
-| `contains` | array | 否 | 主要命令行工具、软件、包 |
-| `default_resources` | object | 是 | 默认 CPU、GPU、NETWORK |
-| `tags` | array | 否 | 检索标签 |
-| `updated_at` | string | 是 | 最近更新时间，格式建议 `YYYY-MM-DD` |
-| `notes` | string | 否 | 备注 |
-
-示例：
-
-```json
-{
-  "sif": "asterfire-base:1.0.0",
-  "owner": "平台维护组",
-  "purpose": "最小 Kit 示例和基础 Python 文件处理",
-  "environment": ["Python 3.12", "adam_community", "Biopython"],
-  "contains": ["python", "biopython","bash"],
-  "default_resources": {
-    "cpu": 2,
-    "gpu": 0,
-    "network": false
-  },
-  "tags": ["example", "template", "base"],
-  "updated_at": "2026-05-09",
-  "notes": "模板示例。真实项目中请替换为平台已构建并可用的 SIF。"
-}
-```
+无可用镜像时由 DevOps 确认复用/构建路线；发布 ZIP 不使用空值、None、TODO 或 example 占位。资源配置按项目真实需要和已核对镜像决定。仅保存该项目选定镜像的 ID、版本与核验信息，不把快照变成跨项目手工名单。
 
 ## `input.json` ↔ `kwargs['args']` 映射关系
 
@@ -237,6 +182,8 @@ references/input_form_catalog.json
 ## 最小输入原则
 
 开发或重构 `input.json` 时先问：这个字段是否真的需要用户填写？
+
+默认采用低代码表单，而不是要求用户编写工具原生 JSON/YAML。若上游程序需要配置文件，应将常用参数拆成受支持的字段类型，在入口代码中完成验证和配置生成。只有开发者或用户明确要求保留原始 JSON 上传时，才能使用 `.json` 文件作为输入；协议复杂且无法合理表单化时，先说明能力取舍并请求确认。
 
 保留字段：
 
@@ -649,20 +596,8 @@ make build
 
 ## Workflow 与 scatter/gather
 
-Workflow 脚本节点仍然执行 Asterfire Tool Protocol 的核心契约：
+完整 DAG、各类节点、节点级并行及产物访问遵守 `../../asterfire-workflow-development/SKILL.md`。本 Kit 需提供准确的 IO 端口与文件类型；产物写当前节点目录，返回相对路径。Kit IO 改动时同步受影响的 Workflow 契约和连线。跨阶段发布由 DevOps 统一编排。
 
-- 从 `kwargs['args']` 读取输入。
-- 输出文件写入当前工作目录。
-- 最后 `return dict`。
-- `return dict` 的 key 与下游节点变量名一致。
-
-scatter/gather 场景：
-
-- 每个 `scatter_xx` 子目录独立处理。
-- 不要假设其他 scatter 目录存在。
-- 当前节点只依赖传入参数和当前工作目录。
-- 需要汇总时，把文件复制到当前节点工作目录的稳定文件夹中，例如 `gathered_outputs/`。
-- 如果下游只接收一个文件，把多个文件打包成 zip 再返回。
 
 ## 审查 checklist
 
@@ -680,7 +615,8 @@ SIF：
 
 - [ ] `runner` 类中存在 `SIF`
 - [ ] `SIF` 不是空值或占位值
-- [ ] `SIF` 已在 `references/sif_registry.json` 中登记，或用户已明确指定
+- [ ] `SIF` 来自目标平台实时查询、用户指定或本流程实际构建，并已核验目标集群可用
+- [ ] 核心业务模块随 Kit ZIP 交付，镜像只固化依赖、工具、权重及必要资源
 - [ ] SIF 用途和当前 Kit 功能匹配
 - [ ] `CPU`、`GPU`、`NETWORK` 与该镜像默认资源基本一致，或有明确理由
 
@@ -705,6 +641,7 @@ Python：
 - [ ] `input.json fields[].name` 与 `kwargs['args']` key 完全一致
 - [ ] `input.json` 已参考 `references/input_form_catalog.json` 的 `task_templates`、`field_recipes` 或 `supported_field_types`
 - [ ] `input.json` 只包含必要字段
+- [ ] 未经开发者明确要求，没有把上游 JSON/YAML 协议直接作为文件上传；所需配置由低代码字段在入口代码中生成
 - [ ] `python scripts/input_form_cli.py validate config/input.json` 能通过基础校验
 - [ ] `@tool_io(outputs)` key 与 `return dict` key 完全一致
 - [ ] 每个输出声明使用 `(输出类型, "简短中文描述")`；描述准确说明实际内容、区分相似输出，无空泛或冗余说明

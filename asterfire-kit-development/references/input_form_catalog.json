@@ -265,6 +265,7 @@
     "先从 Kit 真实需求和 runner 代码中列出必须从 kwargs['args'] 读取的 key。",
     "每个 fields[].name 必须与 kwargs['args'] 的 key 完全一致。",
     "只暴露用户必须上传、必须填写或确实需要调节的字段；代码能自动推断的内容不要放进 input.json。",
+    "默认把上游 JSON/YAML 配置拆成用户可逐项填写的低代码字段，并由 runner 自动生成配置文件；只有开发者或用户明确要求原始 JSON 上传时才使用 JSON file 字段。",
     "优先匹配 task_templates；如果没有合适任务模板，再从 field_recipes 组合字段。",
     "字段类型必须来自 supported_field_types。不要创造平台未声明的新 type。",
     "必填字段同时写入 formRules.required 和字段 validation.required。",

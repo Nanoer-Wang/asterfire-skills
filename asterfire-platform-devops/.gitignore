@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.env
+asterfire.local.yaml
+*.zip

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Asterfire Workflow 开发"
+  short_description: "开发调试各类 Workflow 节点、scatter 并行、端口连接与节点目录产物"
+  default_prompt: "使用 $asterfire-workflow-development 开发、发布或调试这个工作流，核对真实契约、节点并行和相对路径产物；缺失上游能力交给\
+    \ DevOps。"

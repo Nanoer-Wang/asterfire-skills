@@ -1,267 +1,87 @@
 # Asterfire Skills
 
-面向 Asterfire / Galileo / Adam Community Kit 开发流程的 Codex/OpenAI Skills 集合。  
-本仓库用于沉淀平台 Kit 开发、普通项目适配、Dockerfile 镜像构建、镜像内路径校准等规范，让开发者可以通过 `npx skills add` 一键安装并在 Codex 中复用这些能力。
+面向 Asterfire / Galileo / Adam Community 的技能集合，覆盖镜像构建、Kit 开发适配、Agent Toolbox 和 Workflow 发布调用。当前提供四个入口，具体规则、脚本和模板按阶段读取。
 
-## 快速开始
-
-### 1. 查看仓库中已有的 Skills
-
-可以先使用下面的命令查看当前仓库中可用的 Skill 列表：
+## 安装
 
 ```bash
+# 查看可用技能
 npx skills add https://github.com/Nanoer-Wang/asterfire-skills.git --list
-```
 
-该命令会克隆仓库并列出其中已经发布的 Skills，适合在安装前确认 Skill 名称是否正确。
-
-### 2. 为 Codex 全局安装 / 配置 Skills
-
-如果希望把本仓库中的 Skills 配置到 Codex 中，可以使用：
-
-```bash
+# 为 Codex 安装整套技能
 npx skills add https://github.com/Nanoer-Wang/asterfire-skills.git -a codex -g -y
 ```
 
-参数含义：
+推荐整套安装，保持四个技能目录同级。Workflow 的 API 工具复用 DevOps 的公共客户端；DevOps 按任务需要读取 Kit、Workflow 或 Agent 的专业规则。
 
-- `-a codex`：将 Skill 配置到 Codex 使用的 agent 环境中。
-- `-g`：全局安装，方便在不同项目目录中复用。
-- `-y`：自动确认安装过程中的提示。
+本地辅助工具使用 Python 3.10+；YAML 校验需要 PyYAML，可按 [Workflow requirements](asterfire-workflow-development/requirements.txt) 安装。平台 HTTP 客户端使用 Python 标准库。
 
-安装完成后，Codex 在处理 Asterfire Kit 开发相关任务时即可自动读取这些 Skills。
+## 四个技能的分工
 
----
+| Skill | 职责 | 典型任务 |
+| --- | --- | --- |
+| [asterfire-platform-devops](asterfire-platform-devops/SKILL.md) | 唯一全链路编排入口；镜像开发、构建推送、SIF、发布与恢复 | 从项目到镜像、Kit，再到 Workflow；独立 Dockerfile、路径/权重检查、上传和调用调试 |
+| [asterfire-kit-development](asterfire-kit-development/SKILL.md) | Kit 代码开发与原项目适配、审查和打包 | runner、最小表单、IO 端口、Demo、报告、详情页与新版 ZIP |
+| [asterfire-workflow-development](asterfire-workflow-development/SKILL.md) | Workflow 专业开发、发布、调用和节点调试 | 多类节点、端口连接、节点级 scatter/gather、输入、相对路径产物和执行恢复 |
+| [asterfire-agent-skill](asterfire-agent-skill/SKILL.md) | Agent Toolbox 与 ATP 工具开发 | 多 Tool、docstring、hooks、资源元数据、工具暴露和包结构 |
 
-## 已包含的 Skills
+### 如何选择入口
 
-当前仓库包含 4 个核心 Skill。
+- **完整交付**：使用 `$asterfire-platform-devops`。它按已有资产跳过完成阶段，推进镜像 → SIF → Kit 独立验证 → Workflow 验证。
+- **仅开发或适配 Kit、交付 ZIP**：使用 `$asterfire-kit-development`。需要镜像或真实发布调试时由 DevOps 衔接。
+- **已有 Kit 组装工作流**：使用 `$asterfire-workflow-development`。缺少 Kit/镜像时交回 DevOps 准备，上游可用后继续工作流。
+- **Agent 工具开发**：使用 `$asterfire-agent-skill`；发布和外部调用由 DevOps 处理。
 
-| Skill 名称 | 用途 | 典型场景 |
-|---|---|---|
-| `asterfire-kit-development` | Asterfire Kit 标准开发、重构、审查与打包 | 从零开发 Kit、检查 `runner(Tool)`、生成 `input.json`、维护 `SIF`、补充 `demos` |
-| `asterfire-project-to-kit-adapter` | 将普通 Python / 命令行项目适配成 Asterfire 平台 Kit | 已有项目接入平台、补写 `class runner(Tool)`、生成平台配置文件 |
-| `asterfire-dockerfile-builder` | 为 Asterfire Kit 生成 Dockerfile、镜像构建命令和镜像目录结构说明 | 把项目、依赖、模型权重、数据库打包进平台镜像 |
-| `asterfire-image-path-calibrator` | 校准 Kit 代码中镜像内资源路径与运行时工作目录路径 | 修复代码把 `/workspace` 当成镜像内项目目录、找不到 `.pt` 权重或 helper 脚本的问题 |
+每个入口遵循当前任务范围。只做本地代码、Dockerfile 或 YAML 时不会自动扩展为远程发布；端到端请求则继续完成约定的轻量调试。
 
----
+## 镜像从平台实时查询
 
-## Skill 说明
+不再维护本地 SIF 名称注册表。使用支持 Open API v1 的 CLI 查询当前账号可见镜像，核对精确版本、依赖与目标集群 SIF 构建状态：
 
-### 1. `asterfire-kit-development`
-
-用于规范 Asterfire 平台 Kit 的开发、审查和交付。
-
-核心能力：
-
-- 约束标准 Kit 项目结构。
-- 强制 `runner(Tool)` 中指定 `DISPLAY_NAME / NETWORK / CPU / GPU / SIF`。
-- 保证所有输入参数通过 `kwargs['args']` 读取。
-- 保证 `@tool_io(outputs={...})` 与 `return dict` 输出端口一致。
-- 根据平台已支持的表单规则生成最小化 `config/input.json`。
-- 维护 `config/configure.json`、`config/long_description.md`、`report.md`、`Makefile` 和 `demos/demos.json`。
-- 支持查询和维护 `references/sif_registry.json`。
-
-适合使用的提示词示例：
-
-```text
-使用 asterfire-kit-development 帮我从零开发一个 PDB Validator Kit，要求符合平台规范，并生成 config/input.json、configure.json、long_description.md、runner.py、Makefile 和 demos。
+```bash
+asterfire image list --json
+asterfire image list --name <关键词> --json
+asterfire image get <image_id> --json
+asterfire image clusters --image-id <image_id> --json
 ```
 
----
+原生 CLI 版本或路由不兼容时，DevOps 提供基于 `/api/open/v1` 的客户端及分页筛选工具。详情见 [平台镜像查询](asterfire-platform-devops/references/image-discovery.md)。开发者镜像列表受账号权限限制，不能当成所有公共/共享 SIF 的全集。项目仅记录本次选中镜像的 ID、版本和核验证据。
 
-### 2. `asterfire-project-to-kit-adapter`
+## 主要约定
 
-用于把已有普通项目改造成 Asterfire 平台 Kit。
+- 镜像固化依赖、稳定第三方引擎、完整权重和运行资源；Kit ZIP 交付本项目的核心业务模块与入口。
+- Kit 使用唯一 `runner(Tool)`，输入从 `kwargs['args']` 读取，表单字段与代码一致。输出端口包含实际类型和中文描述，与返回的字典实例 key 一致。
+- 镜像路径、启动检查和权重验证统一在 DevOps 镜像阶段维护；平台入口依赖最终非交互环境中的 `bash`、`python` 与 `adam_community`。
+- Workflow 节点不限于文件输入、Kit 和 Python 脚本；按目标部署契约使用其他类型与节点级 scatter。产物保存在当前节点目录，优先返回相对路径；跨节点通过输出端口或已核实的可读路径访问。
+- 真实发布前核对环境、空间、版本、SIF 和权限。执行后按本次 execution/node/step 检查状态、日志和产物，不将“已提交”当成“已验证成功”。
+- Token、密码和真实 `.env` 只放在本机受保护配置中，不提交到仓库、镜像或 ZIP。环境变量名称参考 [DevOps 示例](asterfire-platform-devops/.env.example)。
 
-核心能力：
+## 从旧版升级
 
-- 分析已有项目入口、依赖、输入输出和运行方式。
-- 在确认 `DISPLAY_NAME / NETWORK / CPU / GPU / SIF` 后生成平台入口。
-- 优先采用“薄包装”策略，不粗暴破坏原项目代码。
-- 将原始命令行脚本、Python 函数或项目主入口封装进 `runner.call()`。
-- 自动同步 `input.json`、`kwargs['args']`、`@tool_io(outputs)` 和 `return dict`。
-- 创建或校验 `demos/demos.json`，保证前端可以一键加载 Demo。
+旧能力已迁移，保留脚本与模板的同时取消重复入口：
 
-适合使用的提示词示例：
+| 旧入口/旧文档名称 | 新入口 |
+| --- | --- |
+| `asterfire-kit-adapter` / `asterfire-project-to-kit-adapter` | `asterfire-kit-development` |
+| `asterfire-dockerfile-builder` | `asterfire-platform-devops` 的镜像阶段 |
+| `asterfire-image-rules` / `asterfire-image-path-calibrator` | `asterfire-platform-devops` 的路径与权重检查 |
 
-```text
-使用 asterfire-project-to-kit-adapter 分析这个普通 Python 项目，并把它改造成 Asterfire 平台 Kit。根据已有 SIF 注册表帮我选择合适镜像。
+更新安装后，若本机仍有旧的 `Asterfire-kit-adapter`、`Asterfire-dockerfile-builder` 或 `Asterfire-image-rules` 目录，先备份，再移出技能发现目录，避免新旧规则同时生效。旧镜像注册表不再迁入新技能；需要镜像时查询目标平台。
+
+## 本地验证
+
+平台和工作流测试均采用本地样例、临时目录或模拟请求，不调用生产计算：
+
+```bash
+cd asterfire-platform-devops
+python -m unittest discover -s tests
+
+cd ../asterfire-workflow-development
+python -m unittest discover -s tests
 ```
 
----
-
-### 3. `asterfire-dockerfile-builder`
-
-用于为 Asterfire Kit 生成平台镜像构建方案。
-
-核心能力：
-
-- 生成符合平台运行逻辑的 Dockerfile。
-- 区分镜像内置路径 `/app`、`/opt` 与平台运行时工作目录 `/workspace`。
-- 给出 `docker build`、`docker images`、`docker login`、`docker tag`、`docker push` 命令模板。
-- 输出镜像目录结构说明，例如 `image_layout.md`。
-- 为 Kit 入口代码中的 `SIF = "name:version"` 提供命名建议。
-- 支持把本地项目、模型权重、数据库、第三方工具打包进镜像。
-
-适合使用的提示词示例：
-
-```text
-使用 asterfire-dockerfile-builder 帮我把 ProteinMPNN/ProteinMPNN-main 打包进 Asterfire Kit 镜像，项目放到 /opt/ProteinMPNN，并给出 docker build 和 push 命令。
-```
-
----
-
-### 4. `asterfire-image-path-calibrator`
-
-用于修复 Asterfire Kit 中常见的路径混淆问题。
-
-Asterfire 平台运行 Kit 时，用户上传文件、中间文件、输出文件通常位于运行时工作目录，例如 `/workspace`；而 Dockerfile 构建进镜像的代码、模型权重、helper 脚本、数据库等资源位于镜像内部，例如 `/opt/ProteinMPNN` 或 `/app/...`。
-
-该 Skill 的核心能力：
-
-- 优先读取 `asterfire-dockerfile-builder` 生成的 `image_layout.md` 或镜像目录结构说明。
-- 如果没有目录说明，再解析 Dockerfile 中的 `COPY / ADD / ENV / WORKDIR`。
-- 扫描 `runner.py`、`ProteinMPNN.py` 等入口代码中的路径风险。
-- 修复把 `Path.cwd()` 错当成镜像内项目目录的问题。
-- 将模型权重、helper 脚本和内置项目路径改为明确的镜像绝对路径或环境变量路径。
-- 保证输出文件仍然写回当前工作目录，便于平台收集和链式传递。
-
-适合使用的提示词示例：
-
-```text
-使用 asterfire-image-path-calibrator，根据 image_layout.md 和 Dockerfile 帮我检查 ProteinMPNN.py 中的路径问题，把镜像内项目路径改成 /opt/ProteinMPNN，同时输出仍写到当前工作目录。
-```
-
----
-
-## 推荐工作流
-
-这 4 个 Skills 可以按下面的顺序配合使用。
-
-### 场景 A：从零开发一个新的 Asterfire Kit
-
-1. 使用 `asterfire-kit-development` 设计 Kit 结构、入口文件和表单。
-2. 使用 `asterfire-dockerfile-builder` 构建运行镜像。
-3. 使用 `asterfire-image-path-calibrator` 检查入口代码中是否正确引用镜像内资源。
-4. 回到 `asterfire-kit-development` 做最终规范审查和打包。
-
-### 场景 B：把已有项目适配为平台 Kit
-
-1. 使用 `asterfire-project-to-kit-adapter` 分析普通项目并生成平台入口。
-2. 使用 `asterfire-dockerfile-builder` 将项目依赖、权重、数据库打包进镜像。
-3. 使用 `asterfire-image-path-calibrator` 修复路径引用。
-4. 使用 `asterfire-kit-development` 校验 `input.json`、`configure.json`、`@tool_io`、`return dict` 和 `demos`。
-
-### 场景 C：Kit 调试时找不到模型、脚本或权重
-
-1. 使用 `asterfire-image-path-calibrator` 读取 `image_layout.md` 或 Dockerfile。
-2. 定位代码中错误使用 `Path.cwd()`、相对路径或本地绝对路径的位置。
-3. 将镜像内资源路径改为 `/opt/...`、`/app/...` 或环境变量路径。
-4. 确保输出文件仍写入 `Path.cwd()`。
-
----
-
-## Asterfire Kit 开发中的关键约定
-
-这些约定是本仓库 Skills 默认遵循的核心规则。
-
-### 1. 必须指定 SIF
-
-平台入口类中必须明确指定 `SIF`：
-
-```python
-class runner(Tool):
-    DISPLAY_NAME = "Example Kit"
-    NETWORK = False
-    CPU = 2
-    GPU = 0
-    SIF = "example-kit:1.0.0"
-```
-
-不允许使用空字符串、`None`、`TODO` 或占位镜像。
-
-### 2. 输入必须来自 `kwargs['args']`
-
-```python
-def call(self, kwargs):
-    args = kwargs["args"]
-    input_file = args["input_file"]
-```
-
-`config/input.json` 中的字段名必须和 `kwargs['args']` 中读取的 key 完全一致。
-
-### 3. 输出端口必须和返回字典一致
-
-```python
-@tool_io(
-    outputs={
-        "output_file": TXTFile,
-        "report": MDFile,
-        "success": bool,
-    }
-)
-class runner(Tool):
-    def call(self, kwargs):
-        ...
-        return {
-            "output_file": "result.txt",
-            "report": "report.md",
-            "success": True,
-        }
-```
-
-`@tool_io(outputs={...})` 的 key 必须与 `return { ... }` 的 key 完全一致。
-
-### 4. 输出文件写到当前工作目录
-
-平台运行时会在工作目录中收集输出文件。因此 Kit 运行产生的文件应写入：
-
-```python
-from pathlib import Path
-
-workdir = Path.cwd()
-output_file = workdir / "result.txt"
-```
-
-返回时优先返回相对路径：
-
-```python
-return {"output_file": "result.txt"}
-```
-
-### 5. 镜像内资源使用绝对路径
-
-Dockerfile 中固化进镜像的项目、权重和数据库不要通过 `Path.cwd()` 查找。
-
-推荐：
-
-```python
-from pathlib import Path
-import os
-
-project_root = Path(os.environ.get("PROTEINMPNN_HOME", "/opt/ProteinMPNN"))
-script = project_root / "protein_mpnn_run.py"
-```
-
-不推荐：
-
-```python
-project_root = Path.cwd() / "ProteinMPNN-main"
-```
-
----
-
-
-## 注意事项
-
-1. 在 WSL 或国内网络环境中，如果 GitHub 访问不稳定，建议先确认本地可以正常 `git clone` 该仓库。
-2. 安装前建议先运行 `--list`，确认仓库中的 Skill 都能被正确发现。
-3. 如果只需要某一个 Skill，可先通过 `--list` 查看准确名称，再按实际 CLI 支持的参数选择性安装。
-
----
+Kit 的表单、Demo 校验与项目分析命令见 [Kit Skill](asterfire-kit-development/SKILL.md)，镜像工具见 [镜像阶段](asterfire-platform-devops/references/image-lifecycle.md)。静态校验通过仍需在实际发布任务中检查构建结果、权限和最小真实案例。
 
 ## License
 
-项目使用MIT许可协议。
-
+[MIT](LICENSE)。

@@ -1,0 +1,29 @@
+# Asterfire Kit minimal Dockerfile template
+FROM m.daocloud.io/docker.io/python:3.12.12-slim
+
+ENV PATH=/app/bin:$PATH
+ENV PYTHONPATH=/app:$PYTHONPATH
+
+WORKDIR /app
+
+COPY local_file.txt /app/local_file.txt
+COPY requirements.txt /app/requirements.txt
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 python3-pip ca-certificates \
+    && if ! command -v python >/dev/null 2>&1; then ln -s "$(command -v python3)" /usr/local/bin/python; fi \
+    && python -m pip install --no-cache-dir -r /app/requirements.txt \
+    && python -m pip install --no-cache-dir "adam-community==1.2.5" \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN command -v bash \
+    && command -v python \
+    && python --version \
+    && python -c "import adam_community; print('Asterfire runtime ready')"
+
+WORKDIR /app
+CMD ["bash"]
+
+LABEL Author="Your Name" \
+      Version="1.0.0" \
+      Description="Asterfire Kit image"

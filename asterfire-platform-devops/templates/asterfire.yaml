@@ -1,0 +1,32 @@
+asterfire:
+  # Open API v1 base. For private deployment use https://<host>/api/open/v1.
+  endpoint: "https://sidereus-ai.com/api/open/v1"
+  token_env: "ASTERFIRE_TOKEN"
+
+build:
+  backend: "local"
+  platform: "linux/amd64"
+  internet_required: "auto"
+  dockerfile: "Dockerfile"
+
+acr:
+  edition: "enterprise"
+  region: "cn-hangzhou"
+  instance_name: "asterfire"
+  namespace: "asterfire"
+  repository: ""
+  registry_domain: ""
+  username_env: "ACR_USERNAME"
+  password_env: "ACR_PASSWORD"
+
+yunxiao:
+  # Example: https://openapi-rdc.aliyuncs.com is NOT assumed here; use the endpoint shown by your Yunxiao organization.
+  domain: ""
+  mode: "center"
+  token_env: "YUNXIAO_TOKEN"
+  organization_id_env: "YUNXIAO_ORGANIZATION_ID"
+  codeup_repo: ""
+  branch: "master"
+  codeup_service_connection_env: "YUNXIAO_CODEUP_SERVICE_CONNECTION"
+  acr_service_connection_env: "YUNXIAO_ACR_SERVICE_CONNECTION"
+  build_container: "build-steps-public-registry.cn-beijing.cr.aliyuncs.com/build-steps/alinux3:latest"

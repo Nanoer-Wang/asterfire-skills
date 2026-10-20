@@ -1,0 +1,42 @@
+version: '1'
+title: 文件输入与 Python 节点最小示例
+nodes:
+  - id: node_input
+    type: input
+    params:
+      input_mode: file
+    position: [0, 0]
+  - id: node_copy
+    type: script
+    params:
+      source: '{{nodes.node_input.outputs.user_input}}'
+    agent_config:
+      io_spec:
+        inputs:
+          - key: source
+            data_type: '*'
+            description: 已投递到当前节点的输入文件
+        outputs:
+          - key: copied_file
+            data_type: '*'
+            description: 当前节点目录中的输出文件
+          - key: report
+            data_type: md
+            description: 文件处理报告
+      script_code: |-
+        from pathlib import Path
+        import shutil
+        args = kwargs['args']
+        source = Path(args['source'])
+        if not source.is_file():
+            raise FileNotFoundError(source)
+        target = Path('copied' + source.suffix)
+        shutil.copy2(source, target)
+        Path('report.md').write_text(
+            '# 文件处理结果\n\n已复制文件：' + target.name + '\n', encoding='utf-8')
+        return {'copied_file': target.as_posix(), 'report': 'report.md'}
+      requirements: []
+    position: [300, 0]
+edges:
+  - from: node_input
+    to: node_copy

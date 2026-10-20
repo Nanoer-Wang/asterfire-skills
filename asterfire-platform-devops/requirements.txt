@@ -1,0 +1,2 @@
+# Runtime intentionally uses Python standard library for HTTP.
+# Optional: PyYAML improves YAML parsing but is not required for the bundled template.

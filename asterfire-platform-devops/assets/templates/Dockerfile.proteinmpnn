@@ -1,0 +1,38 @@
+# Asterfire Kit Dockerfile template: ProteinMPNN
+FROM m.daocloud.io/docker.io/python:3.12.12-slim
+
+ENV PATH=/app/bin:$PATH
+ENV PYTHONPATH=/app:$PYTHONPATH
+
+WORKDIR /app
+
+COPY requirements.txt /app/requirements.txt
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 python3-pip ca-certificates git \
+    && if ! command -v python >/dev/null 2>&1; then ln -s "$(command -v python3)" /usr/local/bin/python; fi \
+    && python -m pip install --no-cache-dir -r /app/requirements.txt \
+    && python -m pip install --no-cache-dir "adam-community==1.2.5" \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY ProteinMPNN/ProteinMPNN-main /opt/ProteinMPNN
+
+ENV PROTEINMPNN_HOME=/opt/ProteinMPNN
+ENV PYTHONPATH=/opt/ProteinMPNN:/app:$PYTHONPATH
+
+RUN command -v bash \
+    && command -v python \
+    && python --version \
+    && python -c "import adam_community; print('Asterfire runtime ready')" \
+    && ls -lah /opt/ProteinMPNN \
+    && test -f /opt/ProteinMPNN/protein_mpnn_run.py \
+    && test -d /opt/ProteinMPNN/helper_scripts \
+    && test -d /opt/ProteinMPNN/vanilla_model_weights \
+    && test -d /opt/ProteinMPNN/soluble_model_weights \
+    && ls -lh /opt/ProteinMPNN/vanilla_model_weights
+
+WORKDIR /app
+CMD ["bash"]
+
+LABEL Author="Your Name" \
+      Version="1.0.0" \
+      Description="Asterfire Kit image with local ProteinMPNN project"
